@@ -34,6 +34,7 @@ import { getLocationState, makeLocationState } from '../util/location-state';
 import Account from './accounts/Account';
 import { default as MobileAccount } from './accounts/MobileAccount';
 import { default as MobileAccounts } from './accounts/MobileAccounts';
+import MobileAddNew from './accounts/MobileAddNew';
 import { ActiveLocationProvider } from './ActiveLocation';
 import BankSyncStatus from './BankSyncStatus';
 import Budget from './budget';
@@ -118,6 +119,7 @@ function Routes({ isMobile, location }) {
           exact
           component={isMobile ? MobileAccounts : Account}
         />
+        <Route path="/add-new" exact component={MobileAddNew} />
       </Route>
     </Switch>
   );
@@ -194,6 +196,12 @@ function MobileNavTabs() {
       <NavTab
         name="Accounts"
         path="/accounts"
+        icon={PiggyBank}
+        isActive={false}
+      />
+      <NavTab
+        name="Add new"
+        path="/add-new"
         icon={PiggyBank}
         isActive={false}
       />

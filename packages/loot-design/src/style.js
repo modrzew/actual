@@ -219,6 +219,7 @@ if (Platform.env === 'web') {
     el.innerHTML =
       '<div style="width:100px;height:100px;overflow:scroll;position:absolute;top:-9999px;"/>';
     document.body.appendChild(el);
+    setTimeout(() => document.body.removeChild(el));
     let testNode = el.childNodes[0];
     if (testNode.offsetWidth === testNode.clientWidth) {
       return true;
