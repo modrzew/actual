@@ -47,6 +47,14 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
   const [openModal, setOpenModal] = useState('');
 
   const submit = useCallback(async () => {
+    // TODO: error handling
+    if (!account) {
+      return;
+    }
+    if (amount == null) {
+      return;
+    }
+
     const transaction = {
       id: 'temp',
       date: currentDay(),
