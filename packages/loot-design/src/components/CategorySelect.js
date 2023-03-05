@@ -31,6 +31,7 @@ export function CategoryList({
   highlightedIndex,
   embedded,
   footer,
+  groupHeaderStyle,
 }) {
   let lastGroup = null;
 
@@ -86,6 +87,7 @@ export function CategoryList({
                   style={{
                     color: colors.y9,
                     padding: '4px 9px',
+                    ...groupHeaderStyle,
                   }}
                   data-testid="category-item-group"
                 >
@@ -122,6 +124,7 @@ export default function CategoryAutocomplete({
   showSplitOption,
   embedded,
   onSplit,
+  groupHeaderStyle,
   ...props
 }) {
   let categorySuggestions = useMemo(
@@ -168,6 +171,7 @@ export default function CategoryAutocomplete({
           embedded={embedded}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
+          groupHeaderStyle={groupHeaderStyle}
         />
       )}
       {...props}

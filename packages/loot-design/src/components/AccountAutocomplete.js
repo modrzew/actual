@@ -12,6 +12,7 @@ export function AccountList({
   getItemProps,
   highlightedIndex,
   embedded,
+  groupHeaderStyle,
 }) {
   let lastItem = null;
 
@@ -37,6 +38,7 @@ export function AccountList({
                 style={{
                   color: colors.y9,
                   padding: '4px 9px',
+                  ...groupHeaderStyle,
                 }}
                 data-testid="account-item-group"
               >
@@ -70,6 +72,7 @@ export function AccountList({
 export default function AccountAutocomplete({
   embedded,
   includeClosedAccounts = true,
+  groupHeaderStyle,
   ...props
 }) {
   let accounts = useCachedAccounts() || [];
@@ -90,6 +93,7 @@ export default function AccountAutocomplete({
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
           embedded={embedded}
+          groupHeaderStyle={groupHeaderStyle}
         />
       )}
       {...props}

@@ -48,6 +48,7 @@ export function PayeeList({
   highlightedIndex,
   embedded,
   inputValue,
+  groupHeaderStyle,
   footer,
 }) {
   let isFiltered = items.filtered;
@@ -127,6 +128,7 @@ export function PayeeList({
                   style={{
                     color: colors.y9,
                     padding: '4px 9px',
+                    ...groupHeaderStyle,
                   }}
                 >
                   {title}
@@ -181,6 +183,7 @@ export default function PayeeAutocomplete({
   onUpdate,
   onSelect,
   onManagePayees,
+  groupHeaderStyle,
   ...props
 }) {
   let payees = useCachedPayees();
@@ -328,6 +331,7 @@ export default function PayeeAutocomplete({
           highlightedIndex={highlightedIndex}
           inputValue={inputValue}
           embedded={embedded}
+          groupHeaderStyle={groupHeaderStyle}
           footer={
             <AutocompleteFooter embedded={embedded}>
               {showMakeTransfer && (

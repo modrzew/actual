@@ -24,6 +24,7 @@ import * as undo from 'loot-core/src/platform/client/undo';
 import { BudgetMonthCountProvider } from 'loot-design/src/components/budget/BudgetMonthCountContext';
 import { View } from 'loot-design/src/components/common';
 import { colors, styles } from 'loot-design/src/style';
+import SvgAdd from 'loot-design/src/svg/v1/Add';
 import Cog from 'loot-design/src/svg/v1/Cog';
 import PiggyBank from 'loot-design/src/svg/v1/PiggyBank';
 import Wallet from 'loot-design/src/svg/v1/Wallet';
@@ -34,7 +35,7 @@ import { getLocationState, makeLocationState } from '../util/location-state';
 import Account from './accounts/Account';
 import { default as MobileAccount } from './accounts/MobileAccount';
 import { default as MobileAccounts } from './accounts/MobileAccounts';
-import MobileAddNew from './accounts/MobileAddNew';
+import { MobileAddNew } from './accounts/MobileAddNew';
 import { ActiveLocationProvider } from './ActiveLocation';
 import BankSyncStatus from './BankSyncStatus';
 import Budget from './budget';
@@ -199,12 +200,7 @@ function MobileNavTabs() {
         icon={PiggyBank}
         isActive={false}
       />
-      <NavTab
-        name="Add new"
-        path="/add-new"
-        icon={PiggyBank}
-        isActive={false}
-      />
+      <NavTab name="Add new" path="/add-new" icon={SvgAdd} isActive={false} />
       <NavTab name="Settings" path="/settings" icon={Cog} isActive={false} />
     </div>
   );
@@ -339,6 +335,7 @@ class FinancesApp extends React.Component {
                     <Route path="/budget" component={MobileNavTabs} />
                     <Route path="/accounts" component={MobileNavTabs} />
                     <Route path="/settings" component={MobileNavTabs} />
+                    <Route path="/add-new" component={MobileNavTabs} />
                   </Switch>
                 )}
               </div>
