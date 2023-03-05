@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 
@@ -21,6 +15,11 @@ import { FormLabel } from 'loot-design/src/components/forms';
 import PayeeAutocomplete from 'loot-design/src/components/PayeeAutocomplete';
 import View from 'loot-design/src/components/View';
 import { colors } from 'loot-design/src/style';
+
+const inputStyles = {
+  cursor: 'pointer',
+  fontSize: '1.5em',
+};
 
 export function UnconnectedMobileAddNew({ categoryGroups }) {
   const history = useHistory();
@@ -120,8 +119,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         onClose={() => setOpenModal('')}
         focusAfterClose={false}
         size={{
-          width: '100vw',
-          height: '100vh',
+          height: '95vh',
         }}
       >
         {modal}
@@ -133,7 +131,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
     <View style={{ flexGrow: 1 }}>
       {modal}
       <Header isNegative={isNegative} />
-      <View style={{ padding: '10px' }}>
+      <View style={{ padding: '10px', overflow: 'scroll' }}>
         <AmountInput
           value={amount}
           onChange={setAmount}
@@ -144,7 +142,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         <Input
           type="text"
           readOnly
-          style={{ cursor: 'pointer' }}
+          style={inputStyles}
           value={accountName}
           onClick={() => setOpenModal('account')}
         />
@@ -152,7 +150,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         <Input
           type="text"
           readOnly
-          style={{ cursor: 'pointer' }}
+          style={inputStyles}
           value={payeeName}
           onClick={() => setOpenModal('payee')}
         />
@@ -160,17 +158,22 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         <Input
           type="text"
           readOnly
-          style={{ cursor: 'pointer' }}
+          style={inputStyles}
           value={categoryName}
           onClick={() => setOpenModal('category')}
         />
         <FormLabel title="Notes" />
         <Input
           type="text"
+          style={{ fontSize: '1.5em' }}
           onChange={e => setNotes(e.target.value)}
           value={notes}
         />
-        <Button onClick={submit}>Add</Button>
+        <View style={{ padding: '12px 0' }}>
+          <Button onClick={submit} style={{ fontSize: '1.5em' }}>
+            Add
+          </Button>
+        </View>
       </View>
     </View>
   );
@@ -246,7 +249,6 @@ function Header({ isNegative }) {
 }
 
 function AmountInput({ value, onChange, isNegative, onSignChange }) {
-  const inputRef = useRef();
   const handleChange = useCallback(
     e => {
       const value = e.target.value;
@@ -256,13 +258,11 @@ function AmountInput({ value, onChange, isNegative, onSignChange }) {
     },
     [onChange],
   );
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
   return (
     <View
       style={{
         flexDirection: 'row',
+        flexShrink: '0',
         justifyContent: 'center',
         paddingBottom: '16px',
       }}
@@ -271,17 +271,17 @@ function AmountInput({ value, onChange, isNegative, onSignChange }) {
         onClick={onSignChange}
         style={{
           fontSize: '2em',
-          paddingLeft: '12px',
-          paddingRight: '12px',
+          width: '48px',
           marginRight: '8px',
         }}
       >
         {isNegative ? '-' : '+'}
       </Button>
       <Input
-        ref={inputRef}
+        focused={true}
         type="text"
-        pattern="[0-9\.]*"
+        pattern="[0-9.]*"
+        inputMode="numeric"
         onChange={handleChange}
         value={value}
         style={{
