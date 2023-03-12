@@ -7,11 +7,18 @@ export function useAccounts() {
   let [data, setData] = useState(null);
 
   useEffect(() => {
-    let query = liveQuery(q('accounts').select('*'), async accounts => {
-      if (query) {
-        setData(accounts);
-      }
-    });
+    let query = liveQuery(
+      q('accounts')
+        .orderBy({ offbudget: 'asc' })
+        .orderBy({ sort_order: 'asc' })
+        .select('*'),
+      async accounts => {
+        console.log(accounts);
+        if (query) {
+          setData(accounts);
+        }
+      },
+    );
 
     return () => {
       query.unsubscribe();
