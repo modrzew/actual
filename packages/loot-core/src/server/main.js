@@ -45,12 +45,12 @@ import {
 } from './crdt';
 import * as db from './db';
 import * as mappings from './db/mappings';
-import encryption from './encryption';
+import * as encryption from './encryption';
 import { APIError, TransactionError, PostError, RuleError } from './errors';
 import app from './main-app';
 import { mutator, runHandler } from './mutators';
 import notesApp from './notes/app';
-import Platform from './platform';
+import * as Platform from './platform';
 import { get, post } from './post';
 import * as prefs from './prefs';
 import schedulesApp from './schedules/app';
@@ -1240,6 +1240,22 @@ handlers['nordigen-poll-web-token'] = async function ({
   return null;
 };
 
+handlers['nordigen-get-banks'] = async function (country) {
+  const userToken = await asyncStorage.getItem('user-token');
+
+  if (!userToken) {
+    return Promise.reject({ error: 'unauthorized' });
+  }
+
+  return post(
+    getServer().NORDIGEN_SERVER + '/get-banks',
+    { country },
+    {
+      'X-ACTUAL-TOKEN': userToken,
+    },
+  );
+};
+
 handlers['nordigen-poll-web-token-stop'] = async function () {
   stopPolling = true;
   return 'ok';
@@ -2412,7 +2428,7 @@ export async function initApp(version, isDev, socketName) {
 
 export async function init(config) {
   // Get from build
-  // eslint-disable-next-line
+  // eslint-disable-next-line no-undef
   VERSION = ACTUAL_APP_VERSION;
 
   let dataDir, serverURL;
