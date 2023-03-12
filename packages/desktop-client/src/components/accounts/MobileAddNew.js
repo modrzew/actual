@@ -34,6 +34,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
   const payees = useCachedPayees() || [];
 
   const [payee, setPayee] = useState();
+  const [date, setDate] = useState(currentDay());
   const [account, setAccount] = useState();
   const [category, setCategory] = useState();
   const [notes, setNotes] = useState('');
@@ -63,7 +64,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
 
     const transaction = {
       id: 'temp',
-      date: currentDay(),
+      date,
       cleared: false,
       notes,
       account,
@@ -193,6 +194,15 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
             style={inputStyles}
             value={payeeName}
             onClick={() => setOpenModal('payee')}
+          />
+        </StyledFormField>
+        <StyledFormField>
+          <FormLabel title="Date" />
+          <Input
+            type="date"
+            style={inputStyles}
+            value={date}
+            onChange={e => setDate(e.target.value)}
           />
         </StyledFormField>
         <StyledFormField>
