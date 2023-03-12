@@ -24,7 +24,7 @@ const inputStyles = {
 };
 
 const StyledFormField = ({ children }) => (
-  <FormField style={{ margin: '4px 0' }}>{children}</FormField>
+  <FormField style={{ margin: '4px 0', flexShrink: 0 }}>{children}</FormField>
 );
 
 export function UnconnectedMobileAddNew({ categoryGroups }) {
