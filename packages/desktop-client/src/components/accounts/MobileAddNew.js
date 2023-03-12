@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { connect } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 
 import * as actions from 'loot-core/src/client/actions';
@@ -29,27 +29,27 @@ const StyledFormField = ({ children }) => (
 
 export function UnconnectedMobileAddNew({ categoryGroups }) {
   const history = useHistory();
+  const dispatch = useDispatch();
 
   const accounts = useCachedAccounts() || [];
   const payees = useCachedPayees() || [];
 
-  const [payee, setPayee] = useState();
+  const [payee, setPayee] = useState('');
   const [date, setDate] = useState(currentDay());
-  const [account, setAccount] = useState();
-  const [category, setCategory] = useState();
+  const [account, setAccount] = useState('');
+  const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [amount, setAmount] = useState('');
   const [isNegative, setIsNegative] = useState(true);
 
   const accountName =
-    account != null ? accounts.find(a => a.id === account)?.name : undefined;
+    account !== '' ? accounts.find(a => a.id === account)?.name : '';
   const categoryName =
-    category != null
+    category !== ''
       ? categoryGroups.flatMap(cg => cg.categories).find(c => c.id === category)
           ?.name
-      : undefined;
-  const payeeName =
-    payee != null ? payees.find(p => p.id === payee)?.name : undefined;
+      : '';
+  const payeeName = payee !== '' ? payees.find(p => p.id === payee)?.name : '';
 
   const [openModal, setOpenModal] = useState('');
 
@@ -58,7 +58,7 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
     if (!account) {
       return;
     }
-    if (amount == null) {
+    if (amount === '') {
       return;
     }
 
@@ -70,13 +70,21 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
       account,
       payee,
       category,
-      amount: (isNegative ? -1 : 1) * Number(amount) * 100,
+      // The code below is complex because of floating point math
+      amount: Number(((isNegative ? -1 : 1) * Number(amount) * 100).toFixed(0)),
     };
 
     const transactions = realizeTempTransactions([transaction]);
     await send('transactions-batch-update', {
       added: transactions,
     });
+
+    dispatch(
+      actions.addNotification({
+        type: 'message',
+        message: 'Transaction added!',
+      }),
+    );
 
     history.push(`/accounts/${account}`);
   });
@@ -99,10 +107,10 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
           return;
         }
         const lastTransaction = result.data[0];
-        if (account == null) {
+        if (account === '') {
           setAccount(lastTransaction.account);
         }
-        if (category == null) {
+        if (category === '') {
           setCategory(lastTransaction.category);
         }
       };
