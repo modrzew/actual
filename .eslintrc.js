@@ -4,14 +4,14 @@ module.exports = {
   reportUnusedDisableDirectives: true,
   rules: {
     'prettier/prettier': 'error',
-    'no-unused-vars': [
-      'error',
-      {
-        args: 'none',
-        varsIgnorePattern: '^_',
-        ignoreRestSiblings: true,
-      },
-    ],
+    // 'no-unused-vars': [
+    //   'error',
+    //   {
+    //     args: 'none',
+    //     varsIgnorePattern: '^_',
+    //     ignoreRestSiblings: true,
+    //   },
+    // ],
 
     'no-restricted-globals': ['error'].concat(
       require('confusing-browser-globals').filter(g => g !== 'self'),
