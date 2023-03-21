@@ -1,6 +1,8 @@
 import './polyfills';
 import injectAPI from '@actual-app/api/injected';
 
+import { isNonProductionEnvironment } from 'loot-design/src/util/environment';
+
 import { createTestBudget } from '../mocks/budget';
 import { captureException, captureBreadcrumb } from '../platform/exceptions';
 import asyncStorage from '../platform/server/asyncStorage';
@@ -1265,7 +1267,7 @@ handlers['nordigen-get-banks'] = async function (country) {
 
   return post(
     getServer().NORDIGEN_SERVER + '/get-banks',
-    { country },
+    { country, showDemo: isNonProductionEnvironment() },
     {
       'X-ACTUAL-TOKEN': userToken,
     },
@@ -2507,21 +2509,3 @@ export const lib = {
   },
   SyncProtoBuf: SyncPb,
 };
-
-if (process.env.NODE_ENV === 'development' && Platform.isWeb) {
-  // Support reloading the backend
-  self.addEventListener('message', async e => {
-    if (e.data.type === '__actual:shutdown') {
-      await sheet.waitOnSpreadsheet();
-      await app.stopServices();
-      await db.closeDatabase();
-      asyncStorage.shutdown();
-      fs.shutdown();
-
-      setTimeout(() => {
-        // Give everything else some time to process shutdown events
-        self.close();
-      }, 100);
-    }
-  });
-}
