@@ -11,7 +11,12 @@ import { currentDay } from 'loot-core/src/shared/months';
 import { realizeTempTransactions } from 'loot-core/src/shared/transactions';
 import AccountAutocomplete from 'loot-design/src/components/AccountAutocomplete';
 import CategoryAutocomplete from 'loot-design/src/components/CategorySelect';
-import { Button, Input, Modal } from 'loot-design/src/components/common';
+import {
+  Button,
+  Input,
+  InputWithContent,
+  Modal,
+} from 'loot-design/src/components/common';
 import { FormField, FormLabel } from 'loot-design/src/components/forms';
 import PayeeAutocomplete from 'loot-design/src/components/PayeeAutocomplete';
 import View from 'loot-design/src/components/View';
@@ -196,9 +201,12 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         </StyledFormField>
         <StyledFormField>
           <FormLabel title="Payee" />
-          <Input
+          <InputWithContent
             type="text"
             readOnly
+            rightContent={
+              payee && <Button onClick={() => setPayee('')}>Clear</Button>
+            }
             style={inputStyles}
             value={payeeName}
             onClick={() => setOpenModal('payee')}
@@ -215,9 +223,12 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         </StyledFormField>
         <StyledFormField>
           <FormLabel title="Account" />
-          <Input
+          <InputWithContent
             type="text"
             readOnly
+            rightContent={
+              account && <Button onClick={() => setAccount('')}>Clear</Button>
+            }
             style={inputStyles}
             value={accountName}
             onClick={() => setOpenModal('account')}
@@ -225,9 +236,12 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
         </StyledFormField>
         <StyledFormField>
           <FormLabel title="Category" />
-          <Input
+          <InputWithContent
             type="text"
             readOnly
+            rightContent={
+              category && <Button onClick={() => setCategory('')}>Clear</Button>
+            }
             style={inputStyles}
             value={categoryName}
             onClick={() => setOpenModal('category')}
