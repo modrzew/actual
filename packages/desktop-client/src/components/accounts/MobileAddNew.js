@@ -80,13 +80,17 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
       added: transactions,
     });
 
-    const remainingInCategory = await runQuery(q('categories').select('*'));
-    console.log(remainingInCategory);
+    const categoryBalance = await getCategoryBalance(category);
+    const message =
+      categoryBalance != null
+        ? `Transaction added!\n\n${categoryName} balance: ` +
+          (categoryBalance / 100).toFixed(2)
+        : 'Transaction added';
 
     dispatch(
       actions.addNotification({
-        type: 'message',
-        message: 'Transaction added!',
+        type: categoryBalance > 0 ? 'message' : 'warn',
+        message,
       }),
     );
 
@@ -378,4 +382,18 @@ function AmountInput({ value, onChange, isNegative, onSignChange }) {
       />
     </View>
   );
+}
+
+async function getCategoryBalance(categoryId) {
+  const now = new Date();
+  const nowMonth = now.getMonth() + 1;
+  const monthWithDash = `${now.getFullYear()}-${
+    nowMonth < 10 ? '0' + nowMonth : nowMonth
+  }`;
+  const monthWithoutDash = monthWithDash.replace('-', '');
+  const budget = await send('rollover-budget-month', { month: monthWithDash }); // returns an array of { name, value } objects
+  const category = budget.find(
+    ({ name }) => name === `budget${monthWithoutDash}!leftover-${categoryId}`,
+  );
+  return category?.value;
 }
