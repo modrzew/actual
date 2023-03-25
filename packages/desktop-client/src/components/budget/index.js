@@ -512,8 +512,6 @@ const RolloverBudgetSummary = React.memo(props => {
 function BudgetWrapper(props) {
   let spreadsheet = useSpreadsheet();
   let titlebar = useContext(TitlebarContext);
-  let isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
-  let isNewAutocompleteEnabled = useFeatureFlag('newAutocomplete');
 
   let reportComponents = useMemo(
     () => ({

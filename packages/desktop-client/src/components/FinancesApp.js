@@ -23,9 +23,9 @@ import checkForUpdateNotification from 'loot-core/src/client/update-notification
 import checkForUpgradeNotifications from 'loot-core/src/client/upgrade-notifications';
 import * as undo from 'loot-core/src/platform/client/undo';
 
+import SvgAdd from '../icons/v1/Add';
 import Cog from '../icons/v1/Cog';
 import PiggyBank from '../icons/v1/PiggyBank';
-import SvgAdd from 'loot-design/src/svg/v1/Add';
 import Wallet from '../icons/v1/Wallet';
 import { colors, styles } from '../style';
 import { isMobile } from '../util';

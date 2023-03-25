@@ -9,18 +9,14 @@ import q, { runQuery } from 'loot-core/src/client/query-helpers';
 import { send } from 'loot-core/src/platform/client/fetch';
 import { currentDay } from 'loot-core/src/shared/months';
 import { realizeTempTransactions } from 'loot-core/src/shared/transactions';
-import AccountAutocomplete from 'loot-design/src/components/AccountAutocomplete';
-import CategoryAutocomplete from 'loot-design/src/components/CategorySelect';
-import {
-  Button,
-  Input,
-  InputWithContent,
-  Modal,
-} from 'loot-design/src/components/common';
-import { FormField, FormLabel } from 'loot-design/src/components/forms';
-import PayeeAutocomplete from 'loot-design/src/components/PayeeAutocomplete';
-import View from 'loot-design/src/components/View';
-import { colors } from 'loot-design/src/style';
+
+import { colors } from '../../style';
+import AccountAutocomplete from '../autocomplete/AccountAutocomplete';
+import CategoryAutocomplete from '../autocomplete/CategorySelect';
+import PayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
+import { Button, Input, InputWithContent, Modal } from '../common';
+import { FormField, FormLabel } from '../forms';
+import View from '../View';
 
 const inputStyles = {
   cursor: 'pointer',
@@ -83,6 +79,9 @@ export function UnconnectedMobileAddNew({ categoryGroups }) {
     await send('transactions-batch-update', {
       added: transactions,
     });
+
+    const remainingInCategory = await runQuery(q('categories').select('*'));
+    console.log(remainingInCategory);
 
     dispatch(
       actions.addNotification({
