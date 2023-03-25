@@ -18,7 +18,8 @@ import {
   updateTransaction,
 } from 'loot-core/src/shared/transactions';
 import { integerToCurrency } from 'loot-core/src/shared/util';
-import { SelectedProviderWithItems } from 'loot-design/src/components/useSelected';
+
+import { SelectedProviderWithItems } from '../../hooks/useSelected';
 
 import { SplitsExpandedProvider, TransactionTable } from './TransactionsTable';
 
@@ -541,7 +542,7 @@ describe('Transactions', () => {
     expectToBeEditingField(container, 'category', 2);
   });
 
-  test("dropdown hovers but doesn't change value", async () => {
+  test('dropdown hovers but doesn’t change value', async () => {
     const { container, getTransactions } = renderTransactions();
 
     let input = await editField(container, 'category', 2);
