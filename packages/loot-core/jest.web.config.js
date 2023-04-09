@@ -1,9 +1,20 @@
 module.exports = {
   preset: 'ts-jest/presets/js-with-ts-esm',
-  moduleFileExtensions: ['testing.js', 'web.js', 'mjs', 'js', 'ts', 'json'],
+  moduleFileExtensions: [
+    'testing.js',
+    'testing.ts',
+    'web.js',
+    'web.ts',
+    'web.tsx',
+    'mjs',
+    'js',
+    'ts',
+    'tsx',
+    'json',
+  ],
   testEnvironment: 'jsdom',
   testPathIgnorePatterns: ['/node_modules/', '/lib/'].filter(Boolean),
-  testMatch: ['**/*.web.test.js'],
+  testMatch: ['**/*.web.test.(js|ts|tsx)'],
   transformIgnorePatterns: ['__mocks__', '/node_modules/(?!absurd-sql)'],
   transform: {
     '\\.pegjs$': 'pegjs-jest-transformer',

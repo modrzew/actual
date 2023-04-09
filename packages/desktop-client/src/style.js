@@ -115,10 +115,10 @@ export const styles = {
     flex: 1,
     [`@media (min-width: ${tokens.breakpoint_xs})`]: {
       minWidth: 360,
+      paddingTop: 36,
     },
     [`@media (min-width: ${tokens.breakpoint_medium})`]: {
       minWidth: 500,
-      paddingTop: 36,
     },
   },
   pageHeader: {
@@ -220,7 +220,6 @@ if (Platform.env === 'web') {
   function testScrollbars() {
     let el = document.createElement('div');
     el.innerHTML =
-      // eslint-disable-next-line rulesdir/typography
       '<div style="width:100px;height:100px;overflow:scroll;position:absolute;top:-9999px;"/>';
     document.body.appendChild(el);
     setTimeout(() => document.body.removeChild(el));
