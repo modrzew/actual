@@ -1,4 +1,11 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, {
+  PureComponent,
+  createRef,
+  memo,
+  useState,
+  useRef,
+  useMemo,
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Redirect, useParams, useHistory, useLocation } from 'react-router-dom';
 
@@ -195,10 +202,15 @@ function ReconcileTooltip({ account, onReconcile, onClose }) {
   let balance = useSheetValue(queries.accountBalance(account));
 
   function onSubmit(e) {
+    e.preventDefault();
     let input = e.target.elements[0];
     let amount = currencyToInteger(input.value);
-    onReconcile(amount == null ? balance : amount);
-    onClose();
+    if (amount != null) {
+      onReconcile(amount == null ? balance : amount);
+      onClose();
+    } else {
+      input.select();
+    }
   }
 
   return (
@@ -341,7 +353,7 @@ function DetailedBalance({ name, balance }) {
   );
 }
 
-function SelectedBalance({ selectedItems }) {
+function SelectedBalance({ selectedItems, account }) {
   let name = `selected-balance-${[...selectedItems].join('-')}`;
 
   let rows = useSheetValue({
@@ -364,9 +376,31 @@ function SelectedBalance({ selectedItems }) {
       .calculate({ $sum: '$amount' }),
   });
 
-  if (balance == null) {
-    return null;
+  let scheduleBalance = null;
+  let scheduleData = useCachedSchedules();
+  let previewIds = [...selectedItems]
+    .filter(id => isPreviewId(id))
+    .map(id => id.slice(8));
+  for (let s of scheduleData.schedules) {
+    if (previewIds.includes(s.id)) {
+      if (!account || account.id === s._account) {
+        scheduleBalance += s._amount;
+      } else {
+        scheduleBalance -= s._amount;
+      }
+    }
   }
+
+  if (balance == null) {
+    if (scheduleBalance == null) {
+      return null;
+    } else {
+      balance = scheduleBalance;
+    }
+  } else if (scheduleBalance != null) {
+    balance += scheduleBalance;
+  }
+
   return <DetailedBalance name="Selected balance:" balance={balance} />;
 }
 
@@ -388,7 +422,12 @@ function MoreBalances({ balanceQuery }) {
   );
 }
 
-function Balances({ balanceQuery, showExtraBalances, onToggleExtraBalances }) {
+function Balances({
+  balanceQuery,
+  showExtraBalances,
+  onToggleExtraBalances,
+  account,
+}) {
   let selectedItems = useSelectedItems();
 
   return (
@@ -433,7 +472,7 @@ function Balances({ balanceQuery, showExtraBalances, onToggleExtraBalances }) {
       {showExtraBalances && <MoreBalances balanceQuery={balanceQuery} />}
 
       {selectedItems.size > 0 && (
-        <SelectedBalance selectedItems={selectedItems} />
+        <SelectedBalance selectedItems={selectedItems} account={account} />
       )}
     </View>
   );
@@ -622,7 +661,7 @@ function SelectedTransactionsButton({
   );
 }
 
-const AccountHeader = React.memo(
+const AccountHeader = memo(
   ({
     tableRef,
     editingName,
@@ -782,6 +821,7 @@ const AccountHeader = React.memo(
             balanceQuery={balanceQuery}
             showExtraBalances={showExtraBalances}
             onToggleExtraBalances={onToggleExtraBalances}
+            account={account}
           />
 
           <Stack
@@ -987,7 +1027,8 @@ const AccountHeader = React.memo(
   },
 );
 
-function AllTransactions({ transactions, filtered, children }) {
+function AllTransactions({ account = {}, transactions, filtered, children }) {
+  const { id: accountId } = account;
   let scheduleData = useCachedSchedules();
 
   let schedules = useMemo(
@@ -1013,8 +1054,9 @@ function AllTransactions({ transactions, filtered, children }) {
       date: schedule.next_date,
       notes: scheduleData.statuses.get(schedule.id),
       schedule: schedule.id,
+      _inverse: accountId !== schedule._account,
     }));
-  }, [schedules]);
+  }, [schedules, accountId]);
 
   let allTransactions = useMemo(() => {
     // Don't prepend scheduled transactions if we are filtering
@@ -1030,11 +1072,11 @@ function AllTransactions({ transactions, filtered, children }) {
   return children(allTransactions);
 }
 
-class AccountInternal extends React.PureComponent {
+class AccountInternal extends PureComponent {
   constructor(props) {
     super(props);
     this.paged = null;
-    this.table = React.createRef();
+    this.table = createRef();
     this.animated = true;
 
     this.state = {
@@ -1700,12 +1742,13 @@ class AccountInternal extends React.PureComponent {
 
     let rule = {
       stage: null,
+      conditionsOp: 'and',
       conditions: [payeeCondition],
       actions: [
         {
           op: 'set',
           field: 'category',
-          value: null,
+          value: transactions[0].category,
           type: 'id',
         },
       ],
@@ -1819,6 +1862,7 @@ class AccountInternal extends React.PureComponent {
 
     return (
       <AllTransactions
+        account={account}
         transactions={transactions}
         filtered={transactionsFiltered}
       >
@@ -1957,6 +2001,7 @@ class AccountInternal extends React.PureComponent {
 
 function AccountHack(props) {
   let { dispatch: splitsExpandedDispatch } = useSplitsExpanded();
+
   return (
     <AccountInternal
       {...props}
@@ -1965,8 +2010,12 @@ function AccountHack(props) {
   );
 }
 
-export default function Account(props) {
+export default function Account() {
   const syncEnabled = useFeatureFlag('syncAccount');
+  let params = useParams();
+  let location = useLocation();
+  let activeLocation = useActiveLocation();
+
   let state = useSelector(state => ({
     newTransactions: state.queries.newTransactions,
     matchedTransactions: state.queries.matchedTransactions,
@@ -1975,16 +2024,11 @@ export default function Account(props) {
     categoryGroups: state.queries.categories.grouped,
     dateFormat: state.prefs.local.dateFormat || 'MM/dd/yyyy',
     hideFraction: state.prefs.local.hideFraction || false,
-    expandSplits: props.match && state.prefs.local['expand-splits'],
-    showBalances:
-      props.match &&
-      state.prefs.local['show-balances-' + props.match.params.id],
-    showCleared:
-      props.match &&
-      !state.prefs.local['hide-cleared-' + props.match.params.id],
+    expandSplits: state.prefs.local['expand-splits'],
+    showBalances: params.id && state.prefs.local['show-balances-' + params.id],
+    showCleared: params.id && !state.prefs.local['hide-cleared-' + params.id],
     showExtraBalances:
-      props.match &&
-      state.prefs.local['show-extra-balances-' + props.match.params.id],
+      params.id && state.prefs.local['show-extra-balances-' + params.id],
     payees: state.queries.payees,
     modalShowing: state.modals.modalStack.length > 0,
     accountsSyncing: state.account.accountsSyncing,
@@ -1998,23 +2042,27 @@ export default function Account(props) {
     [dispatch],
   );
 
-  let params = useParams();
-  let location = useLocation();
-  let activeLocation = useActiveLocation();
-
   let transform = useMemo(() => {
-    let filter = queries.getAccountFilter(params.id, '_account');
+    let filterByAccount = queries.getAccountFilter(params.id, '_account');
+    let filterByPayee = queries.getAccountFilter(
+      params.id,
+      '_payee.transfer_acct',
+    );
 
     // Never show schedules on these pages
     if (
       (location.state && location.state.filter) ||
       params.id === 'uncategorized'
     ) {
-      filter = { id: null };
+      filterByAccount = { id: null };
+      filterByPayee = { id: null };
     }
 
     return q => {
-      q = q.filter({ $and: [filter, { '_account.closed': false }] });
+      q = q.filter({
+        $and: [{ '_account.closed': false }],
+        $or: [filterByAccount, filterByPayee],
+      });
       return q.orderBy({ next_date: 'desc' });
     };
   }, [params.id]);
@@ -2033,7 +2081,7 @@ export default function Account(props) {
             !!(activeLocation.state && activeLocation.state.locationPtr)
           }
           accountId={params.id}
-          location={props.location}
+          location={location}
         />
       </SplitsExpandedProvider>
     </SchedulesProvider>

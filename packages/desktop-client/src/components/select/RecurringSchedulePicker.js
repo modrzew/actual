@@ -17,6 +17,7 @@ import DateSelect from './DateSelect';
 const MAX_DAY_OF_WEEK_INTERVAL = 5;
 
 const FREQUENCY_OPTIONS = [
+  { id: 'daily', name: 'Days' },
   { id: 'weekly', name: 'Weeks' },
   { id: 'monthly', name: 'Months' },
   { id: 'yearly', name: 'Years' },
@@ -161,15 +162,13 @@ function SchedulePreview({ previewDates }) {
   }
 
   return (
-    <>
-      <Stack
-        direction="column"
-        spacing={1}
-        style={{ marginTop: 15, color: colors.n4 }}
-      >
-        {content}
-      </Stack>
-    </>
+    <Stack
+      direction="column"
+      spacing={1}
+      style={{ marginTop: 15, color: colors.n4 }}
+    >
+      {content}
+    </Stack>
   );
 }
 

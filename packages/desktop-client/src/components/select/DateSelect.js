@@ -1,4 +1,5 @@
 import React, {
+  forwardRef,
   useState,
   useRef,
   useEffect,
@@ -6,17 +7,20 @@ import React, {
   useImperativeHandle,
   useMemo,
 } from 'react';
+import { useSelector } from 'react-redux';
 
 import * as d from 'date-fns';
 import Pikaday from 'pikaday';
 
 import 'pikaday/css/pikaday.css';
+
 import {
   getDayMonthFormat,
   getDayMonthRegex,
   getShortYearFormat,
   getShortYearRegex,
 } from 'loot-core/src/shared/months';
+import { stringToInteger } from 'loot-core/src/shared/util';
 
 import { colors } from '../../style';
 import { View, Input, Tooltip } from '../common';
@@ -65,8 +69,8 @@ let pickerStyles = {
   },
 };
 
-export let DatePicker = React.forwardRef(
-  ({ value, dateFormat, onUpdate, onSelect }, ref) => {
+export let DatePicker = forwardRef(
+  ({ value, firstDayOfWeekIdx, dateFormat, onUpdate, onSelect }, ref) => {
     let picker = useRef(null);
     let mountPoint = useRef(null);
 
@@ -75,7 +79,7 @@ export let DatePicker = React.forwardRef(
       () => ({
         handleInputKeyDown(e) {
           let newDate = null;
-          switch (e.code) {
+          switch (e.key) {
             case 'ArrowLeft':
               e.preventDefault();
               newDate = d.subDays(picker.current.getDate(), 1);
@@ -107,6 +111,7 @@ export let DatePicker = React.forwardRef(
       picker.current = new Pikaday({
         theme: 'actual-date-picker',
         keyboardInput: false,
+        firstDay: stringToInteger(firstDayOfWeekIdx),
         defaultDate: value
           ? d.parse(value, dateFormat, new Date())
           : new Date(),
@@ -140,7 +145,7 @@ export let DatePicker = React.forwardRef(
 );
 
 function defaultShouldSaveFromKey(e) {
-  return e.code === 'Enter';
+  return e.key === 'Enter';
 }
 
 export default function DateSelect({
@@ -189,6 +194,12 @@ export default function DateSelect({
   let [selectedValue, setSelectedValue] = useState(value);
   let userSelectedValue = useRef(selectedValue);
 
+  const firstDayOfWeekIdx = useSelector(state =>
+    state.prefs.local?.firstDayOfWeekIdx
+      ? state.prefs.local.firstDayOfWeekIdx
+      : '0',
+  );
+
   useEffect(() => {
     userSelectedValue.current = value;
   }, [value]);
@@ -224,14 +235,14 @@ export default function DateSelect({
 
   function onKeyDown(e) {
     if (
-      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code) &&
+      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
       !e.shiftKey &&
       !e.metaKey &&
       !e.altKey &&
       open
     ) {
       picker.current.handleInputKeyDown(e);
-    } else if (e.code === 'Escape') {
+    } else if (e.key === 'Escape') {
       setValue(parsedDefaultValue);
       setSelectedValue(parsedDefaultValue);
 
@@ -334,6 +345,7 @@ export default function DateSelect({
           <DatePicker
             ref={picker}
             value={selectedValue}
+            firstDayOfWeekIdx={firstDayOfWeekIdx}
             dateFormat={dateFormat}
             onUpdate={date => {
               setSelectedValue(d.format(date, dateFormat));

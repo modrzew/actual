@@ -11,15 +11,15 @@ module.exports = {
     'tsx',
     'json',
   ],
-  setupFilesAfterEnv: ['<rootDir>/src/mocks/setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/mocks/setup.ts'],
   testEnvironment: 'node',
   testPathIgnorePatterns: [
     '/node_modules/',
     '/lib/',
     '.+/index\\.web\\.test\\.(js|ts|tsx)',
   ],
-  transformIgnorePatterns: ['/node_modules/', '__mocks__'],
+  transformIgnorePatterns: ['/node_modules/'],
   transform: {
-    '\\.pegjs$': 'pegjs-jest-transformer',
+    '\\.pegjs$': '<rootDir>/peg-transform.mjs',
   },
 };

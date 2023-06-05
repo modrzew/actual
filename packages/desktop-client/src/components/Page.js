@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 
-import { styles } from '../style';
+import { useResponsive } from '../ResponsiveProvider';
+import { colors, styles } from '../style';
 
 import { Modal, View, Text } from './common';
 
-let PageTypeContext = React.createContext({ type: 'page' });
+let PageTypeContext = createContext({ type: 'page' });
 
 export function PageTypeProvider({ type, current, children }) {
   return (
@@ -16,20 +17,57 @@ export function PageTypeProvider({ type, current, children }) {
 }
 
 export function usePageType() {
-  return React.useContext(PageTypeContext);
+  return useContext(PageTypeContext);
 }
 
-function PageTitle({ name }) {
+function PageTitle({ name, style }) {
+  const { isNarrowWidth } = useResponsive();
+
+  if (isNarrowWidth) {
+    return (
+      <View
+        style={[
+          {
+            alignItems: 'center',
+            backgroundColor: colors.b2,
+            color: 'white',
+            flexDirection: 'row',
+            flex: '1 0 auto',
+            fontSize: 18,
+            fontWeight: 500,
+            height: 50,
+            justifyContent: 'center',
+            overflowY: 'auto',
+          },
+          style,
+        ]}
+      >
+        {name}
+      </View>
+    );
+  }
+
   return (
-    <Text style={{ fontSize: 25, fontWeight: 500, marginBottom: 15 }}>
+    <Text
+      style={[
+        {
+          fontSize: 25,
+          fontWeight: 500,
+          marginBottom: 15,
+        },
+        style,
+      ]}
+    >
       {name}
     </Text>
   );
 }
 
-export function Page({ title, modalSize, children }) {
+export function Page({ title, modalSize, children, titleStyle }) {
   let { type, current } = usePageType();
   let history = useHistory();
+  let { isNarrowWidth } = useResponsive();
+  let HORIZONTAL_PADDING = isNarrowWidth ? 10 : 20;
 
   if (type === 'modal') {
     let size = modalSize;
@@ -51,9 +89,27 @@ export function Page({ title, modalSize, children }) {
   }
 
   return (
-    <View style={[styles.page, { paddingLeft: 20, paddingRight: 20, flex: 1 }]}>
-      <PageTitle name={title} />
-      {children}
+    <View style={isNarrowWidth ? undefined : styles.page}>
+      <PageTitle
+        name={title}
+        style={{
+          ...titleStyle,
+          paddingInline: HORIZONTAL_PADDING,
+        }}
+      />
+      <View
+        style={
+          isNarrowWidth
+            ? { overflowY: 'auto', padding: HORIZONTAL_PADDING }
+            : {
+                paddingLeft: HORIZONTAL_PADDING,
+                paddingRight: HORIZONTAL_PADDING,
+                flex: 1,
+              }
+        }
+      >
+        {children}
+      </View>
     </View>
   );
 }

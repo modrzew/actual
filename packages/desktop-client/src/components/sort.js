@@ -1,4 +1,5 @@
 import React, {
+  createContext,
   useEffect,
   useRef,
   useLayoutEffect,
@@ -38,7 +39,7 @@ export function useDraggable({
 }) {
   let _onDragChange = useRef(onDragChange);
 
-  //eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [{ isDragging }, dragRef] = useDrag({
     item: { type, item },
     collect: monitor => ({ isDragging: monitor.isDragging() }),
@@ -105,7 +106,7 @@ export function useDroppable({ types, id, onDrop, onLongHover }) {
   };
 }
 
-export const DropHighlightPosContext = React.createContext(null);
+export const DropHighlightPosContext = createContext(null);
 
 export function DropHighlight({ pos, offset = {} }) {
   let itemPos = useContext(DropHighlightPosContext);

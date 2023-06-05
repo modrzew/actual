@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { Component, createContext, createRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import { css, before } from 'glamor';
 
 import { styles } from '../style';
 
-export const IntersectionBoundary = React.createContext();
+export const IntersectionBoundary = createContext();
 
 export function useTooltip() {
   let [isOpen, setIsOpen] = useState(false);
@@ -23,14 +23,14 @@ export function useTooltip() {
   };
 }
 
-export class Tooltip extends React.Component {
+export class Tooltip extends Component {
   static contextType = IntersectionBoundary;
   state = { position: null };
 
   constructor(props) {
     super(props);
     this.position = props.position || 'bottom-right';
-    this.contentRef = React.createRef();
+    this.contentRef = createRef();
   }
 
   setup() {
@@ -45,8 +45,7 @@ export class Tooltip extends React.Component {
         // kind of things can be click that shouldn't close a tooltip?
         if (
           node.dataset.testid === 'tooltip' ||
-          node.dataset.reachPopover != null ||
-          node.id.startsWith('react-select')
+          node.dataset.reachPopover != null
         ) {
           break;
         }
@@ -60,7 +59,7 @@ export class Tooltip extends React.Component {
     };
 
     let escHandler = e => {
-      if (e.code === 'Escape') {
+      if (e.key === 'Escape') {
         this.props.onClose && this.props.onClose();
       }
     };

@@ -34,11 +34,16 @@ We have a wide range of documentation on how to use Actual, this is all availabl
 The Actual app is split up into a few packages:
 
 - loot-core - The core application that runs on any platform
-- loot-design - The generic design components that make up the UI
 - desktop-client - The desktop UI
 - desktop-electron - The desktop app
 
 More information on the project structure is available in our [community documentation](https://actualbudget.github.io/docs/Developers/project-layout).
+
+## Feature Requests
+Current feature requests can be seen [here](https://github.com/actualbudget/actual/issues?q=is%3Aissue+label%3A%22needs+votes%22+sort%3Areactions-%2B1-desc).
+Vote for your favorite requests by reacting :+1: to the top comment of the request.
+
+To add new feature requests, open a new Issue of the "Feature Request" type.
 
 ## Sponsors
 

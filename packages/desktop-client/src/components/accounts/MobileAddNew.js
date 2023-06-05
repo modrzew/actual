@@ -14,9 +14,8 @@ import { colors } from '../../style';
 import AccountAutocomplete from '../autocomplete/AccountAutocomplete';
 import CategoryAutocomplete from '../autocomplete/CategorySelect';
 import PayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
-import { Button, Input, InputWithContent, Modal } from '../common';
+import { Button, Input, InputWithContent, Modal, View } from '../common';
 import { FormField, FormLabel } from '../forms';
-import View from '../View';
 
 const inputStyles = {
   cursor: 'pointer',
@@ -275,6 +274,7 @@ export const MobileAddNew = connect(
   }),
   actions,
 )(UnconnectedMobileAddNew);
+export default MobileAddNew;
 
 function AccountModal({ value, onSelect }) {
   return (

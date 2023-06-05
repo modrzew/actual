@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 
 import styled from 'styled-components';
 
@@ -22,7 +22,7 @@ const Output = styled.pre`
   padding: 0.5em;
 `;
 
-class Debug extends React.Component {
+class Debug extends Component {
   constructor() {
     super();
     this.state = {
@@ -58,7 +58,7 @@ class Debug extends React.Component {
   async fetchSqlGenResult() {
     let row = {};
     try {
-      // eslint-disable-next-line no-unused-vars, no-eval
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-eval
       row = (0, eval)('(' + this.state.sqlgenRow + ')');
     } catch (e) {}
 

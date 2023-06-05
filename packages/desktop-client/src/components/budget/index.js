@@ -1,5 +1,6 @@
-import React, { useContext, useMemo } from 'react';
+import React, { memo, PureComponent, useContext, useMemo } from 'react';
 import { connect } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 
 import * as actions from 'loot-core/src/client/actions';
 import { useSpreadsheet } from 'loot-core/src/client/SpreadsheetProvider';
@@ -30,7 +31,7 @@ import { RolloverContext } from './rollover/RolloverContext';
 
 let _initialBudgetMonth = null;
 
-class Budget extends React.PureComponent {
+class Budget extends PureComponent {
   constructor(props) {
     super(props);
 
@@ -229,10 +230,14 @@ class Budget extends React.PureComponent {
         }),
       });
     } else {
-      this.props.updateCategory(category);
+      const cat = {
+        ...category,
+        hidden: category.hidden ? 1 : 0,
+      };
 
+      this.props.updateCategory(cat);
       this.setState({
-        categoryGroups: updateCategory(categoryGroups, category),
+        categoryGroups: updateCategory(categoryGroups, cat),
       });
     }
   };
@@ -278,9 +283,14 @@ class Budget extends React.PureComponent {
         }),
       });
     } else {
-      this.props.updateGroup(group);
+      const grp = {
+        ...group,
+        hidden: group.hidden ? 1 : 0,
+      };
+
+      this.props.updateGroup(grp);
       this.setState({
-        categoryGroups: updateGroup(categoryGroups, group),
+        categoryGroups: updateGroup(categoryGroups, grp),
       });
     }
   };
@@ -497,14 +507,12 @@ class Budget extends React.PureComponent {
   }
 }
 
-const RolloverBudgetSummary = React.memo(props => {
+const RolloverBudgetSummary = memo(props => {
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
-  const isNewAutocompleteEnabled = useFeatureFlag('newAutocomplete');
   return (
     <rollover.BudgetSummary
       {...props}
       isGoalTemplatesEnabled={isGoalTemplatesEnabled}
-      isNewAutocompleteEnabled={isNewAutocompleteEnabled}
     />
   );
 });
@@ -512,6 +520,7 @@ const RolloverBudgetSummary = React.memo(props => {
 function BudgetWrapper(props) {
   let spreadsheet = useSpreadsheet();
   let titlebar = useContext(TitlebarContext);
+  let history = useHistory();
 
   let reportComponents = useMemo(
     () => ({
@@ -556,6 +565,7 @@ function BudgetWrapper(props) {
         rolloverComponents={rolloverComponents}
         spreadsheet={spreadsheet}
         titlebar={titlebar}
+        history={history}
       />
     </View>
   );

@@ -121,7 +121,7 @@ export function partitionByField(data, field) {
   return res;
 }
 
-export function groupBy(data, field, mapper) {
+export function groupBy(data, field, mapper?: (v: unknown) => unknown) {
   let res = new Map();
   for (let i = 0; i < data.length; i++) {
     let item = data[i];
@@ -252,6 +252,7 @@ export let numberFormats = [
   { value: 'comma-dot', label: '1,000.33', labelNoFraction: '1,000' },
   { value: 'dot-comma', label: '1.000,33', labelNoFraction: '1.000' },
   { value: 'space-comma', label: '1 000,33', labelNoFraction: '1 000' },
+  { value: 'space-dot', label: '1 000.33', labelNoFraction: '1 000' },
 ];
 
 let numberFormat: {
@@ -278,6 +279,11 @@ export function setNumberFormat({ format, hideFraction }) {
       locale = 'de-DE';
       regex = /[^-0-9,]/g;
       separator = ',';
+      break;
+    case 'space-dot':
+      locale = 'dje';
+      regex = /[^-0-9.]/g;
+      separator = '.';
       break;
     case 'comma-dot':
     default:
@@ -354,7 +360,7 @@ export function currencyToAmount(str) {
 
 export function currencyToInteger(str) {
   let amount = currencyToAmount(str);
-  return amount ? amountToInteger(amount) : null;
+  return amount == null ? null : amountToInteger(amount);
 }
 
 export function stringToInteger(str) {

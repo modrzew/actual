@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+} from 'react';
 import { connect } from 'react-redux';
-import { Switch, Route, withRouter } from 'react-router-dom';
+import { Switch, Route, useLocation, useHistory } from 'react-router-dom';
 
-import { useViewportSize } from '@react-aria/utils';
 import { css, media } from 'glamor';
 
 import * as actions from 'loot-core/src/client/actions';
@@ -13,10 +18,10 @@ import { listen } from 'loot-core/src/platform/client/fetch';
 import useFeatureFlag from '../hooks/useFeatureFlag';
 import ArrowLeft from '../icons/v1/ArrowLeft';
 import AlertTriangle from '../icons/v2/AlertTriangle';
-import ArrowButtonRight1 from '../icons/v2/ArrowButtonRight1';
 import NavigationMenu from '../icons/v2/NavigationMenu';
+import { useResponsive } from '../ResponsiveProvider';
 import { colors } from '../style';
-import tokens, { breakpoints } from '../tokens';
+import tokens from '../tokens';
 
 import AccountSyncCheck from './accounts/AccountSyncCheck';
 import AnimatedRefresh from './AnimatedRefresh';
@@ -35,7 +40,7 @@ import LoggedInUser from './LoggedInUser';
 import { useServerURL } from './ServerContext';
 import SheetValue from './spreadsheet/SheetValue';
 
-export let TitlebarContext = React.createContext();
+export let TitlebarContext = createContext();
 
 export function TitlebarProvider({ children }) {
   let listeners = useRef([]);
@@ -132,7 +137,7 @@ export function SyncButton({ localPrefs, style, onSync }) {
               ? colors.n9
               : null,
         },
-        media(`(min-width: ${tokens.breakpoint_medium})`, {
+        media(`(min-width: ${tokens.breakpoint_small})`, {
           color:
             syncState === 'error'
               ? colors.r4
@@ -253,7 +258,6 @@ function BudgetTitlebar({ globalPrefs, saveGlobalPrefs, localPrefs }) {
 }
 
 function Titlebar({
-  location,
   globalPrefs,
   saveGlobalPrefs,
   localPrefs,
@@ -264,13 +268,13 @@ function Titlebar({
   style,
   sync,
 }) {
+  let history = useHistory();
+  let location = useLocation();
   let sidebar = useSidebar();
+  let { isNarrowWidth } = useResponsive();
   const serverURL = useServerURL();
 
-  let windowWidth = useViewportSize().width;
-  let sidebarAlwaysFloats = windowWidth < breakpoints.medium;
-
-  return (
+  return isNarrowWidth ? null : (
     <View
       style={[
         {
@@ -289,93 +293,58 @@ function Titlebar({
         style,
       ]}
     >
-      {(floatingSidebar || sidebarAlwaysFloats) && (
+      {(floatingSidebar || sidebar.alwaysFloats) && (
         <Button
           bare
-          style={{
-            marginRight: 8,
-            '& .arrow-right': { opacity: 0, transition: 'opacity .3s' },
-            '& .menu': { opacity: 1, transition: 'opacity .3s' },
-            '&:hover .arrow-right': !sidebarAlwaysFloats && { opacity: 1 },
-            '&:hover .menu': !sidebarAlwaysFloats && { opacity: 0 },
+          style={{ marginRight: 8 }}
+          onPointerEnter={e => {
+            if (e.pointerType === 'mouse') {
+              sidebar.setHidden(false);
+            }
           }}
-          onMouseEnter={() => sidebar.show()}
-          onMouseLeave={() => sidebar.hide()}
-          onClick={() => {
-            if (windowWidth >= breakpoints.medium) {
-              saveGlobalPrefs({ floatingSidebar: !floatingSidebar });
-            } else {
-              sidebar.toggle();
+          onPointerLeave={e => {
+            if (e.pointerType === 'mouse') {
+              sidebar.setHidden(true);
+            }
+          }}
+          onPointerUp={e => {
+            if (e.pointerType !== 'mouse') {
+              sidebar.setHidden(!sidebar.hidden);
             }
           }}
         >
-          <View style={{ width: 15, height: 15 }}>
-            <ArrowButtonRight1
-              className="arrow-right"
-              style={{
-                width: 13,
-                height: 13,
-                color: colors.n5,
-                position: 'absolute',
-                top: 1,
-                left: 1,
-              }}
-            />
-            <NavigationMenu
-              className="menu"
-              style={{
-                width: 15,
-                height: 15,
-                color: colors.n5,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-              }}
-            />
-          </View>
+          <NavigationMenu
+            className="menu"
+            style={{ width: 15, height: 15, color: colors.n5, left: 0 }}
+          />
         </Button>
       )}
 
       <Switch>
-        <Route
-          path="/accounts"
-          exact
-          children={props => {
-            let state = props.location.state || {};
-            return state.goBack ? (
-              <Button onClick={() => props.history.goBack()} bare>
-                <ArrowLeft
-                  width={10}
-                  height={10}
-                  style={{ marginRight: 5, color: 'currentColor' }}
-                />{' '}
-                Back
-              </Button>
-            ) : null;
-          }}
-        />
+        <Route path="/accounts" exact>
+          {location.state?.goBack ? (
+            <Button onClick={() => history.goBack()} bare>
+              <ArrowLeft
+                width={10}
+                height={10}
+                style={{ marginRight: 5, color: 'currentColor' }}
+              />{' '}
+              Back
+            </Button>
+          ) : null}
+        </Route>
 
-        <Route
-          path="/accounts/:id"
-          exact
-          children={props => {
-            return (
-              props.match && <AccountSyncCheck id={props.match.params.id} />
-            );
-          }}
-        />
+        <Route path="/accounts/:id" exact>
+          <AccountSyncCheck />
+        </Route>
 
-        <Route
-          path="/budget"
-          exact
-          children={() => (
-            <BudgetTitlebar
-              globalPrefs={globalPrefs}
-              saveGlobalPrefs={saveGlobalPrefs}
-              localPrefs={localPrefs}
-            />
-          )}
-        />
+        <Route path="/budget" exact>
+          <BudgetTitlebar
+            globalPrefs={globalPrefs}
+            saveGlobalPrefs={saveGlobalPrefs}
+            localPrefs={localPrefs}
+          />
+        </Route>
       </Switch>
       <View style={{ flex: 1 }} />
       <UncategorizedButton />
@@ -391,14 +360,12 @@ function Titlebar({
   );
 }
 
-export default withRouter(
-  connect(
-    state => ({
-      globalPrefs: state.prefs.global,
-      localPrefs: state.prefs.local,
-      userData: state.user.data,
-      floatingSidebar: state.prefs.global.floatingSidebar,
-    }),
-    actions,
-  )(Titlebar),
-);
+export default connect(
+  state => ({
+    globalPrefs: state.prefs.global,
+    localPrefs: state.prefs.local,
+    userData: state.user.data,
+    floatingSidebar: state.prefs.global.floatingSidebar,
+  }),
+  actions,
+)(Titlebar);

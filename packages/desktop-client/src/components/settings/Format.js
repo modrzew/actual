@@ -4,9 +4,22 @@ import { numberFormats } from 'loot-core/src/shared/util';
 
 import tokens from '../../tokens';
 import { Button, CustomSelect, Text, View } from '../common';
+import { useSidebar } from '../FloatableSidebar';
 import { Checkbox } from '../forms';
 
 import { Setting } from './UI';
+
+// Follows Pikaday 'firstDay' numbering
+// https://github.com/Pikaday/Pikaday
+let daysOfWeek = [
+  { value: '0', label: 'Sunday' },
+  { value: '1', label: 'Monday' },
+  { value: '2', label: 'Tuesday' },
+  { value: '3', label: 'Wednesday' },
+  { value: '4', label: 'Thursday' },
+  { value: '5', label: 'Friday' },
+  { value: '6', label: 'Saturday' },
+];
 
 let dateFormats = [
   { value: 'MM/dd/yyyy', label: 'MM/DD/YYYY' },
@@ -21,11 +34,9 @@ function Column({ title, children }) {
     <View
       style={{
         alignItems: 'flex-start',
-        gap: '0.5em',
         flexGrow: 1,
-        [`@media (max-width: ${tokens.breakpoint_xs})`]: {
-          width: '100%',
-        },
+        gap: '0.5em',
+        width: '100%',
       }}
     >
       <Text style={{ fontWeight: 500 }}>{title}</Text>
@@ -35,6 +46,10 @@ function Column({ title, children }) {
 }
 
 export default function FormatSettings({ prefs, savePrefs }) {
+  function onFirstDayOfWeek(idx) {
+    savePrefs({ firstDayOfWeekIdx: idx });
+  }
+
   function onDateFormat(format) {
     savePrefs({ dateFormat: format });
   }
@@ -48,6 +63,8 @@ export default function FormatSettings({ prefs, savePrefs }) {
     savePrefs({ hideFraction });
   }
 
+  let sidebar = useSidebar();
+  let firstDayOfWeekIdx = prefs.firstDayOfWeekIdx || '0'; // Sunday
   let dateFormat = prefs.dateFormat || 'MM/dd/yyyy';
   let numberFormat = prefs.numberFormat || 'comma-dot';
 
@@ -56,11 +73,15 @@ export default function FormatSettings({ prefs, savePrefs }) {
       primaryAction={
         <View
           style={{
-            flexDirection: 'row',
+            flexDirection: 'column',
             gap: '1em',
             width: '100%',
-            [`@media (max-width: ${tokens.breakpoint_xs})`]: {
-              flexDirection: 'column',
+            [`@media (min-width: ${
+              sidebar.floating
+                ? tokens.breakpoint_small
+                : tokens.breakpoint_medium
+            })`]: {
+              flexDirection: 'row',
             },
           }}
         >
@@ -94,6 +115,17 @@ export default function FormatSettings({ prefs, savePrefs }) {
                 value={dateFormat}
                 onChange={onDateFormat}
                 options={dateFormats.map(f => [f.value, f.label])}
+                style={{ padding: '5px 10px', fontSize: 15 }}
+              />
+            </Button>
+          </Column>
+
+          <Column title="First day of the week">
+            <Button bounce={false} style={{ padding: 0 }}>
+              <CustomSelect
+                value={firstDayOfWeekIdx}
+                onChange={onFirstDayOfWeek}
+                options={daysOfWeek.map(f => [f.value, f.label])}
                 style={{ padding: '5px 10px', fontSize: 15 }}
               />
             </Button>

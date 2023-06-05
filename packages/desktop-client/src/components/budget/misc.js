@@ -1,6 +1,16 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, {
+  createRef,
+  memo,
+  Component,
+  useContext,
+  useState,
+  useMemo,
+} from 'react';
 import { connect } from 'react-redux';
 
+import { bindActionCreators } from 'redux';
+
+import * as actions from 'loot-core/src/client/actions';
 import * as monthUtils from 'loot-core/src/shared/months';
 
 import useResizeObserver from '../../hooks/useResizeObserver';
@@ -8,6 +18,7 @@ import ExpandArrow from '../../icons/v0/ExpandArrow';
 import ArrowThinLeft from '../../icons/v1/ArrowThinLeft';
 import ArrowThinRight from '../../icons/v1/ArrowThinRight';
 import CheveronDown from '../../icons/v1/CheveronDown';
+import DotsHorizontalTriple from '../../icons/v1/DotsHorizontalTriple';
 import { styles, colors } from '../../style';
 import {
   View,
@@ -36,14 +47,15 @@ function getScrollbarWidth() {
   return Math.max(styles.scrollbarWidth - 2, 0);
 }
 
-export class BudgetTable extends React.Component {
+class BudgetTable extends Component {
   constructor(props) {
     super(props);
-    this.budgetCategoriesRef = React.createRef();
+    this.budgetCategoriesRef = createRef();
 
     this.state = {
       editing: null,
       draggingState: null,
+      showHiddenCategories: props.prefs['budget.showHiddenCategories'] ?? false,
     };
   }
 
@@ -138,7 +150,7 @@ export class BudgetTable extends React.Component {
       return null;
     }
 
-    if (e.code === 'Enter' || e.code === 'Tab') {
+    if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
       this.moveVertically(e.shiftKey ? -1 : 1);
     }
@@ -159,6 +171,15 @@ export class BudgetTable extends React.Component {
   clearEditing() {
     this.setState({ editing: null });
   }
+
+  toggleHiddenCategories = () => {
+    this.setState(prevState => ({
+      showHiddenCategories: !prevState.showHiddenCategories,
+    }));
+    this.props.savePrefs({
+      'budget.showHiddenCategories': !this.state.showHiddenCategories,
+    });
+  };
 
   render() {
     let {
@@ -182,7 +203,7 @@ export class BudgetTable extends React.Component {
       onShowNewGroup,
       onHideNewGroup,
     } = this.props;
-    let { editing, draggingState } = this.state;
+    let { editing, draggingState, showHiddenCategories } = this.state;
 
     return (
       <View
@@ -229,7 +250,10 @@ export class BudgetTable extends React.Component {
           monthBounds={monthBounds}
           type={type}
         >
-          <BudgetTotals MonthComponent={dataComponents.BudgetTotalsComponent} />
+          <BudgetTotals
+            MonthComponent={dataComponents.BudgetTotalsComponent}
+            toggleHiddenCategories={this.toggleHiddenCategories}
+          />
           <IntersectionBoundary.Provider value={this.budgetCategoriesRef}>
             <View
               style={{
@@ -250,6 +274,7 @@ export class BudgetTable extends React.Component {
                 innerRef={el => (this.budgetDataNode = el)}
               >
                 <BudgetCategories
+                  showHiddenCategories={showHiddenCategories}
                   categoryGroups={categoryGroups}
                   newCategoryForGroup={newCategoryForGroup}
                   isAddingGroup={isAddingGroup}
@@ -281,6 +306,17 @@ export class BudgetTable extends React.Component {
   }
 }
 
+const connected = connect(
+  state => ({
+    prefs: state.prefs.local,
+  }),
+  dispatch => bindActionCreators(actions, dispatch),
+  null,
+  { forwardRef: true },
+)(BudgetTable);
+
+export { connected as BudgetTable };
+
 export function SidebarCategory({
   innerRef,
   category,
@@ -307,6 +343,7 @@ export function SidebarCategory({
         alignItems: 'center',
         userSelect: 'none',
         WebkitUserSelect: 'none',
+        opacity: category.hidden ? 0.33 : undefined,
       }}
     >
       <div
@@ -346,12 +383,18 @@ export function SidebarCategory({
               onMenuSelect={type => {
                 if (type === 'rename') {
                   onEditName(category.id);
-                } else {
+                } else if (type === 'delete') {
                   onDelete(category.id);
+                } else if (type === 'toggleVisibility') {
+                  onSave({ ...category, hidden: !category.hidden });
                 }
                 setMenuOpen(false);
               }}
               items={[
+                {
+                  name: 'toggleVisibility',
+                  text: category.hidden ? 'Show' : 'Hide',
+                },
                 { name: 'rename', text: 'Rename' },
                 { name: 'delete', text: 'Delete' },
               ]}
@@ -392,7 +435,7 @@ export function SidebarCategory({
         style,
       ]}
       onKeyDown={e => {
-        if (e.code === 'Enter') {
+        if (e.key === 'Enter') {
           onEditName(null);
           e.stopPropagation();
         }
@@ -507,13 +550,19 @@ export function SidebarGroup({
                       onEdit(group.id);
                     } else if (type === 'add-category') {
                       onShowNewCategory(group.id);
-                    } else {
+                    } else if (type === 'delete') {
                       onDelete(group.id);
+                    } else if (type === 'toggleVisibility') {
+                      onSave({ ...group, hidden: !group.hidden });
                     }
                     setMenuOpen(false);
                   }}
                   items={[
                     { name: 'add-category', text: 'Add category' },
+                    {
+                      name: 'toggleVisibility',
+                      text: group.hidden ? 'Show' : 'Hide',
+                    },
                     { name: 'rename', text: 'Rename' },
                     onDelete && { name: 'delete', text: 'Delete' },
                   ]}
@@ -547,7 +596,7 @@ export function SidebarGroup({
         },
       ]}
       onKeyDown={e => {
-        if (e.code === 'Enter') {
+        if (e.key === 'Enter') {
           onEdit(null);
           e.stopPropagation();
         }
@@ -606,7 +655,11 @@ function RenderMonths({ component: Component, editingIndex, args, style }) {
   });
 }
 
-const BudgetTotals = React.memo(function BudgetTotals({ MonthComponent }) {
+const BudgetTotals = memo(function BudgetTotals({
+  MonthComponent,
+  toggleHiddenCategories,
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <View
       data-testid="budget-totals"
@@ -626,10 +679,54 @@ const BudgetTotals = React.memo(function BudgetTotals({ MonthComponent }) {
           width: 200,
           color: colors.n4,
           justifyContent: 'center',
-          paddingLeft: 18,
+          paddingLeft: 15,
+          paddingRight: 5,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
       >
-        Category
+        <View style={{ flexGrow: '1' }}>Category</View>
+        <Button
+          bare
+          onClick={() => {
+            setMenuOpen(true);
+          }}
+          style={{ color: 'currentColor', padding: 3 }}
+        >
+          <DotsHorizontalTriple
+            width={15}
+            height={15}
+            style={{ color: colors.n5 }}
+          />
+          {menuOpen && (
+            <Tooltip
+              position="bottom-right"
+              width={200}
+              style={{ padding: 0 }}
+              onClose={() => {
+                setMenuOpen(false);
+              }}
+            >
+              <Menu
+                onMenuSelect={type => {
+                  if (type === 'toggleVisibility') {
+                    toggleHiddenCategories();
+                  }
+                  setMenuOpen(false);
+                }}
+                items={[
+                  {
+                    name: 'toggleVisibility',
+                    text: 'Toggle hidden categories',
+                  },
+                ]}
+              />
+            </Tooltip>
+          )}
+        </Button>
       </View>
       <RenderMonths component={MonthComponent} />
     </View>
@@ -682,7 +779,10 @@ function ExpenseGroup({
     <Row
       collapsed={true}
       backgroundColor={colors.n11}
-      style={{ fontWeight: 600 }}
+      style={{
+        fontWeight: 600,
+        opacity: group.hidden ? 0.33 : undefined,
+      }}
     >
       {dragState && !dragState.preview && dragState.type === 'group' && (
         <View
@@ -733,11 +833,7 @@ function ExpenseGroup({
   );
 }
 
-const ExpenseCategory = connect(state => ({
-  isNewAutocompleteEnabled: state.prefs.local['flags.newAutocomplete'],
-}))(ExpenseCategoryInternal);
-
-function ExpenseCategoryInternal({
+function ExpenseCategory({
   cat,
   budgetArray,
   editingCell,
@@ -751,7 +847,6 @@ function ExpenseCategoryInternal({
   onShowActivity,
   onDragChange,
   onReorder,
-  isNewAutocompleteEnabled,
 }) {
   let dragging = dragState && dragState.item === cat;
 
@@ -773,7 +868,14 @@ function ExpenseCategoryInternal({
   });
 
   return (
-    <Row innerRef={dropRef} collapsed={true} backgroundColor="transparent">
+    <Row
+      innerRef={dropRef}
+      collapsed={true}
+      style={{
+        backgroundColor: 'transparent',
+        opacity: cat.hidden ? 0.5 : undefined,
+      }}
+    >
       <DropHighlight pos={dropPos} offset={{ top: 1 }} />
 
       <View
@@ -810,7 +912,6 @@ function ExpenseCategoryInternal({
             onEdit: onEditMonth,
             onBudgetAction,
             onShowActivity,
-            isNewAutocompleteEnabled,
           }}
         />
       </View>
@@ -913,10 +1014,11 @@ function IncomeCategory({
   );
 }
 
-const BudgetCategories = React.memo(
+const BudgetCategories = memo(
   ({
     categoryGroups,
     newCategoryForGroup,
+    showHiddenCategories,
     isAddingGroup,
     editingCell,
     collapsed,
@@ -943,7 +1045,15 @@ const BudgetCategories = React.memo(
       let items = Array.prototype.concat.apply(
         [],
         expenseGroups.map(group => {
-          let items = [{ type: 'expense-group', value: group }];
+          if (group.hidden && !showHiddenCategories) {
+            return [];
+          }
+
+          const groupCategories = group.categories.filter(
+            cat => showHiddenCategories || !cat.hidden,
+          );
+
+          let items = [{ type: 'expense-group', value: { ...group } }];
 
           if (newCategoryForGroup === group.id) {
             items.push({ type: 'new-category' });
@@ -951,7 +1061,7 @@ const BudgetCategories = React.memo(
 
           return [
             ...items,
-            ...(collapsed.includes(group.id) ? [] : group.categories).map(
+            ...(collapsed.includes(group.id) ? [] : groupCategories).map(
               cat => ({
                 type: 'expense-category',
                 value: cat,
@@ -973,7 +1083,9 @@ const BudgetCategories = React.memo(
             newCategoryForGroup === incomeGroup.id && { type: 'new-category' },
             ...(collapsed.includes(incomeGroup.id)
               ? []
-              : incomeGroup.categories
+              : incomeGroup.categories.filter(
+                  cat => showHiddenCategories || !cat.hidden,
+                )
             ).map(cat => ({
               type: 'income-category',
               value: cat,
@@ -983,7 +1095,13 @@ const BudgetCategories = React.memo(
       }
 
       return items;
-    }, [categoryGroups, collapsed, newCategoryForGroup, isAddingGroup]);
+    }, [
+      categoryGroups,
+      collapsed,
+      newCategoryForGroup,
+      isAddingGroup,
+      showHiddenCategories,
+    ]);
 
     let [dragState, setDragState] = useState(null);
     let [savedCollapsed, setSavedCollapsed] = useState(null);
@@ -1216,7 +1334,7 @@ function IncomeHeader({ MonthComponent, onShowNewGroup }) {
   );
 }
 
-export const BudgetPageHeader = React.memo(
+export const BudgetPageHeader = memo(
   ({ startMonth, onMonthSelect, numMonths, monthBounds, style }) => {
     function getValidMonth(month) {
       let start = monthBounds.start;

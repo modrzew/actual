@@ -9,14 +9,11 @@ import { send, sendCatch } from 'loot-core/src/platform/client/fetch';
 import * as monthUtils from 'loot-core/src/shared/months';
 import { extractScheduleConds } from 'loot-core/src/shared/schedules';
 
-import useFeatureFlag from '../../hooks/useFeatureFlag';
 import useSelected, { SelectedProvider } from '../../hooks/useSelected';
 import { colors } from '../../style';
 import SimpleTransactionsTable from '../accounts/SimpleTransactionsTable';
-import LegacyAccountAutocomplete from '../autocomplete/AccountAutocomplete';
-import NewAccountAutocomplete from '../autocomplete/NewAccountAutocomplete';
-import NewPayeeAutocomplete from '../autocomplete/NewPayeeAutocomplete';
-import LegacyPayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
+import AccountAutocomplete from '../autocomplete/AccountAutocomplete';
+import PayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
 import { Stack, View, Text, Button } from '../common';
 import { FormField, FormLabel, Checkbox } from '../forms';
 import { OpSelect } from '../modals/EditRule';
@@ -25,6 +22,7 @@ import DateSelect from '../select/DateSelect';
 import RecurringSchedulePicker from '../select/RecurringSchedulePicker';
 import { SelectedItemsButton } from '../table';
 import { AmountInput, BetweenAmountInput } from '../util/AmountInput';
+import GenericInput from '../util/GenericInput';
 
 function mergeFields(defaults, initial) {
   let res = { ...defaults };
@@ -80,8 +78,6 @@ function updateScheduleConditions(schedule, fields) {
 }
 
 export default function ScheduleDetails() {
-  const isNewAutocompleteEnabled = useFeatureFlag('newAutocomplete');
-
   let { id, initialFields } = useParams();
   let adding = id == null;
   let payees = useCachedPayees({ idKey: true });
@@ -115,6 +111,7 @@ export default function ScheduleDetails() {
               amountOp: schedule._amountOp || 'isapprox',
               date: schedule._date,
               posts_transaction: action.schedule.posts_transaction,
+              name: schedule.name,
             },
           };
         }
@@ -201,6 +198,7 @@ export default function ScheduleDetails() {
           amountOp: null,
           date: null,
           posts_transaction: false,
+          name: null,
         },
         initialFields,
       ),
@@ -294,8 +292,6 @@ export default function ScheduleDetails() {
         state.fields,
       );
 
-      dispatch({ type: 'set-transactions', transactions: [] });
-
       if (error) {
         dispatch({ type: 'form-error', error });
         return;
@@ -341,6 +337,18 @@ export default function ScheduleDetails() {
 
   async function onSave() {
     dispatch({ type: 'form-error', error: null });
+    if (state.fields.name) {
+      let { data: sameName } = await runQuery(
+        q('schedules').filter({ name: state.fields.name }).select('id'),
+      );
+      if (sameName.length > 0 && sameName[0].id !== state.schedule.id) {
+        dispatch({
+          type: 'form-error',
+          error: 'There is already a schedule with this name',
+        });
+        return;
+      }
+    }
 
     let { error, conditions } = updateScheduleConditions(
       state.schedule,
@@ -356,6 +364,7 @@ export default function ScheduleDetails() {
       schedule: {
         id: state.schedule.id,
         posts_transaction: state.fields.posts_transaction,
+        name: state.fields.name,
       },
       conditions,
     });
@@ -419,24 +428,31 @@ export default function ScheduleDetails() {
   // This is derived from the date
   let repeats = state.fields.date ? !!state.fields.date.frequency : false;
 
-  const PayeeAutocomplete = isNewAutocompleteEnabled
-    ? NewPayeeAutocomplete
-    : LegacyPayeeAutocomplete;
-  const AccountAutocomplete = isNewAutocompleteEnabled
-    ? NewAccountAutocomplete
-    : LegacyAccountAutocomplete;
-
   return (
     <Page
       title={payee ? `Schedule: ${payee.name}` : 'Schedule'}
       modalSize="medium"
     >
+      <Stack direction="row" style={{ marginTop: 10 }}>
+        <FormField style={{ flex: 1 }}>
+          <FormLabel title="Schedule Name" htmlFor="name-field" />
+          <GenericInput
+            field="string"
+            type="string"
+            value={state.fields.name}
+            multi={false}
+            onChange={e => {
+              dispatch({ type: 'set-field', field: 'name', value: e });
+            }}
+          />
+        </FormField>
+      </Stack>
       <Stack direction="row" style={{ marginTop: 20 }}>
         <FormField style={{ flex: 1 }}>
-          <FormLabel title="Payee" htmlFor="payee-field" />
+          <FormLabel title="Payee" id="payee-label" htmlFor="payee-field" />
           <PayeeAutocomplete
             value={state.fields.payee}
-            inputId="payee-field"
+            labelProps={{ id: 'payee-label' }}
             inputProps={{ id: 'payee-field', placeholder: '(none)' }}
             onSelect={id =>
               dispatch({ type: 'set-field', field: 'payee', value: id })
@@ -446,11 +462,15 @@ export default function ScheduleDetails() {
         </FormField>
 
         <FormField style={{ flex: 1 }}>
-          <FormLabel title="Account" htmlFor="account-field" />
+          <FormLabel
+            title="Account"
+            id="account-label"
+            htmlFor="account-field"
+          />
           <AccountAutocomplete
             includeClosedAccounts={false}
             value={state.fields.account}
-            inputId="account-field"
+            labelProps={{ id: 'account-label' }}
             inputProps={{ id: 'account-field', placeholder: '(none)' }}
             onSelect={id =>
               dispatch({ type: 'set-field', field: 'account', value: id })
@@ -466,7 +486,7 @@ export default function ScheduleDetails() {
               style={{ margin: 0, flex: 1 }}
             />
             <OpSelect
-              ops={['is', 'isapprox', 'isbetween']}
+              ops={['isapprox', 'is', 'isbetween']}
               value={state.fields.amountOp}
               formatOp={op => {
                 switch (op) {

@@ -1,3 +1,5 @@
+import type { IRuleOptions } from '@rschedule/core';
+
 import * as monthUtils from './months';
 import q from './query';
 
@@ -65,6 +67,11 @@ export function getRecurringDescription(config) {
   let interval = config.interval || 1;
 
   switch (config.frequency) {
+    case 'daily': {
+      let desc = 'Every ';
+      desc += interval !== 1 ? `${interval} days` : 'day';
+      return desc;
+    }
     case 'weekly': {
       let desc = 'Every ';
       desc += interval !== 1 ? `${interval} weeks` : 'week';
@@ -151,15 +158,8 @@ export function getRecurringDescription(config) {
   }
 }
 
-type RecurringSchedule = {
-  start: Date;
-  frequency: string;
-  byHourOfDay: number[];
-  interval?: unknown;
-};
-
 export function recurConfigToRSchedule(config) {
-  let base: RecurringSchedule = {
+  let base: IRuleOptions = {
     start: monthUtils.parseDate(config.start),
     frequency: config.frequency.toUpperCase(),
     byHourOfDay: [12],
@@ -172,6 +172,9 @@ export function recurConfigToRSchedule(config) {
   let abbrevDay = name => name.slice(0, 2).toUpperCase();
 
   switch (config.frequency) {
+    case 'daily':
+      // Nothing to do
+      return [base];
     case 'weekly':
       // Nothing to do
       return [base];

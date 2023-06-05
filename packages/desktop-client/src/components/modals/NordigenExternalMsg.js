@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 
-import { send } from 'loot-core/src/platform/client/fetch';
+import { sendCatch } from 'loot-core/src/platform/client/fetch';
 
+import useNordigenStatus from '../../hooks/useNordigenStatus';
 import AnimatedLoading from '../../icons/AnimatedLoading';
 import { colors } from '../../style';
 import { Error, Warning } from '../alerts';
-import Autocomplete from '../autocomplete/NewAutocomplete';
-import { View, Modal, Button, P } from '../common';
+import Autocomplete from '../autocomplete/Autocomplete';
+import { View, Modal, Button, P, Link } from '../common';
 import { FormField, FormLabel } from '../forms';
 
 import { COUNTRY_OPTIONS } from './countries';
@@ -14,9 +15,12 @@ import { COUNTRY_OPTIONS } from './countries';
 function useAvailableBanks(country) {
   const [banks, setBanks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     async function fetch() {
+      setIsError(false);
+
       if (!country) {
         setBanks([]);
         setIsLoading(false);
@@ -25,9 +29,15 @@ function useAvailableBanks(country) {
 
       setIsLoading(true);
 
-      const results = await send('nordigen-get-banks', country);
+      const { data, error } = await sendCatch('nordigen-get-banks', country);
 
-      setBanks(results.map(bank => ({ value: bank.id, label: bank.name })));
+      if (error) {
+        setIsError(true);
+        setBanks([]);
+      } else {
+        setBanks(data);
+      }
+
       setIsLoading(false);
     }
 
@@ -37,29 +47,7 @@ function useAvailableBanks(country) {
   return {
     data: banks,
     isLoading,
-  };
-}
-
-function useNordigenStatus() {
-  const [configured, setConfigured] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function fetch() {
-      setIsLoading(true);
-
-      const results = await send('nordigen-status');
-
-      setConfigured(results.configured || false);
-      setIsLoading(false);
-    }
-
-    fetch();
-  }, [setConfigured, setIsLoading]);
-
-  return {
-    configured,
-    isLoading,
+    isError,
   };
 }
 
@@ -86,8 +74,11 @@ export default function NordigenExternalMsg({
   let [error, setError] = useState(null);
   let data = useRef(null);
 
-  const { data: bankOptions, isLoading: isBankOptionsLoading } =
-    useAvailableBanks(country);
+  const {
+    data: bankOptions,
+    isLoading: isBankOptionsLoading,
+    isError: isBankOptionError,
+  } = useAvailableBanks(country);
   const { configured: isConfigured, isLoading: isConfigurationLoading } =
     useNordigenStatus();
 
@@ -124,16 +115,23 @@ export default function NordigenExternalMsg({
         <FormField>
           <FormLabel title="Choose your country:" htmlFor="country-field" />
           <Autocomplete
+            strict
+            highlightFirst
             disabled={isConfigurationLoading}
-            options={COUNTRY_OPTIONS}
+            suggestions={COUNTRY_OPTIONS}
             onSelect={setCountry}
-            value={COUNTRY_OPTIONS.find(({ value }) => value === country)}
-            inputId="country-field"
-            placeholder="(please select)"
+            value={country}
+            inputProps={{ id: 'country-field', placeholder: '(please select)' }}
           />
         </FormField>
 
-        {country &&
+        {isBankOptionError ? (
+          <Error>
+            Failed loading available banks: Nordigen access credentials might be
+            misconfigured. Please set them up again.
+          </Error>
+        ) : (
+          country &&
           (isBankOptionsLoading ? (
             'Loading banks...'
           ) : (
@@ -141,14 +139,19 @@ export default function NordigenExternalMsg({
               <FormLabel title="Choose your bank:" htmlFor="bank-field" />
               <Autocomplete
                 focused
-                options={bankOptions}
+                strict
+                highlightFirst
+                suggestions={bankOptions}
                 onSelect={setInstitutionId}
-                value={bankOptions.find(({ value }) => value === institutionId)}
-                inputId="bank-field"
-                placeholder="(please select)"
+                value={institutionId}
+                inputProps={{
+                  id: 'bank-field',
+                  placeholder: '(please select)',
+                }}
               />
             </FormField>
-          ))}
+          ))
+        )}
 
         <Warning>
           By enabling bank-sync, you will be granting Nordigen (a third party
@@ -221,6 +224,12 @@ export default function NordigenExternalMsg({
                   ? 'Loading accounts...'
                   : null}
               </View>
+
+              {waiting === 'browser' && (
+                <Link onClick={onJump} style={{ marginTop: 10 }}>
+                  (Account linking not opening in a new tab? Click here)
+                </Link>
+              )}
             </View>
           ) : success ? (
             <Button

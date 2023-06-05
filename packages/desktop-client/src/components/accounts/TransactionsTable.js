@@ -1,4 +1,9 @@
 import React, {
+  createContext,
+  createElement,
+  createRef,
+  forwardRef,
+  memo,
   useState,
   useRef,
   useMemo,
@@ -37,7 +42,6 @@ import {
   titleFirst,
 } from 'loot-core/src/shared/util';
 
-import useFeatureFlag from '../../hooks/useFeatureFlag';
 import { useMergedRefs } from '../../hooks/useMergedRefs';
 import usePrevious from '../../hooks/usePrevious';
 import { useSelectedDispatch, useSelectedItems } from '../../hooks/useSelected';
@@ -48,12 +52,9 @@ import ArrowsSynchronize from '../../icons/v2/ArrowsSynchronize';
 import CalendarIcon from '../../icons/v2/Calendar';
 import Hyperlink2 from '../../icons/v2/Hyperlink2';
 import { styles, colors } from '../../style';
-import LegacyAccountAutocomplete from '../autocomplete/AccountAutocomplete';
-import NewCategoryAutocomplete from '../autocomplete/CategoryAutocomplete';
-import LegacyCategoryAutocomplete from '../autocomplete/CategorySelect';
-import NewAccountAutocomplete from '../autocomplete/NewAccountAutocomplete';
-import NewPayeeAutocomplete from '../autocomplete/NewPayeeAutocomplete';
-import LegacyPayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
+import AccountAutocomplete from '../autocomplete/AccountAutocomplete';
+import CategoryAutocomplete from '../autocomplete/CategorySelect';
+import PayeeAutocomplete from '../autocomplete/PayeeAutocomplete';
 import { View, Text, Tooltip, Button } from '../common';
 import { getStatusProps } from '../schedules/StatusBadge';
 import DateSelect from '../select/DateSelect';
@@ -78,7 +79,7 @@ function serializeTransaction(transaction, showZeroInDeposit) {
   let { amount, date } = transaction;
 
   if (isPreviewId(transaction.id)) {
-    amount = getScheduledAmount(amount);
+    amount = (transaction._inverse ? -1 : 1) * getScheduledAmount(amount);
   }
 
   let debit = amount < 0 ? -amount : null;
@@ -140,7 +141,7 @@ function isLastChild(transactions, index) {
   );
 }
 
-let SplitsExpandedContext = React.createContext(null);
+let SplitsExpandedContext = createContext(null);
 
 export function useSplitsExpanded() {
   let data = useContext(SplitsExpandedContext);
@@ -235,7 +236,7 @@ export function SplitsExpandedProvider({ children, initialMode = 'expand' }) {
   );
 }
 
-export const TransactionHeader = React.memo(
+export const TransactionHeader = memo(
   ({ hasSelected, showAccount, showCategory, showBalance, showCleared }) => {
     let dispatchSelected = useSelectedDispatch();
 
@@ -254,7 +255,7 @@ export const TransactionHeader = React.memo(
           focused={false}
           selected={hasSelected}
           width={20}
-          onSelect={() => dispatchSelected({ type: 'select-all' })}
+          onSelect={e => dispatchSelected({ type: 'select-all', event: e })}
         />
         <Cell value="Date" width={110} />
         {showAccount && <Cell value="Account" width="flex" />}
@@ -275,7 +276,11 @@ function getPayeePretty(transaction, payee, transferAcct) {
   let { payee: payeeId } = transaction;
 
   if (transferAcct) {
-    const Icon = transaction.amount > 0 ? LeftArrow2 : RightArrow2;
+    const Icon =
+      (transaction._inverse ? -1 : 1) * transaction.amount > 0
+        ? LeftArrow2
+        : RightArrow2;
+
     return (
       <View
         style={{
@@ -363,7 +368,7 @@ function StatusCell({
         onEdit={() => onEdit(id, 'cleared')}
         onSelect={onSelect}
       >
-        {React.createElement(statusProps.Icon, {
+        {createElement(statusProps.Icon, {
           style: {
             width: 13,
             height: 13,
@@ -379,6 +384,7 @@ function StatusCell({
 function PayeeCell({
   id,
   payeeId,
+  accountId,
   focused,
   inherited,
   payees,
@@ -393,8 +399,11 @@ function PayeeCell({
   onCreatePayee,
   onManagePayees,
 }) {
-  const isNewAutocompleteEnabled = useFeatureFlag('newAutocomplete');
   let isCreatingPayee = useRef(false);
+
+  // Filter out the account we're currently in as it is not a valid transfer
+  accounts = accounts.filter(account => account.id !== accountId);
+  payees = payees.filter(payee => payee.transfer_acct !== accountId);
 
   return (
     <CustomCell
@@ -424,32 +433,27 @@ function PayeeCell({
         shouldSaveFromKey,
         inputStyle,
       }) => {
-        const PayeeAutocomplete = isNewAutocompleteEnabled
-          ? NewPayeeAutocomplete
-          : LegacyPayeeAutocomplete;
         return (
-          <>
-            <PayeeAutocomplete
-              payees={payees}
-              accounts={accounts}
-              value={payeeId}
-              shouldSaveFromKey={shouldSaveFromKey}
-              inputProps={{
-                onBlur,
-                onKeyDown,
-                style: inputStyle,
-              }}
-              showManagePayees={true}
-              tableBehavior={true}
-              defaultFocusTransferPayees={transaction.is_child}
-              focused={true}
-              onUpdate={onUpdate}
-              onSelect={onSave}
-              onManagePayees={() => onManagePayees(payeeId)}
-              isCreatable
-              menuPortalTarget={undefined}
-            />
-          </>
+          <PayeeAutocomplete
+            payees={payees}
+            accounts={accounts}
+            value={payeeId}
+            shouldSaveFromKey={shouldSaveFromKey}
+            inputProps={{
+              onBlur,
+              onKeyDown,
+              style: inputStyle,
+            }}
+            showManagePayees={true}
+            tableBehavior={true}
+            defaultFocusTransferPayees={transaction.is_child}
+            focused={true}
+            onUpdate={onUpdate}
+            onSelect={onSave}
+            onManagePayees={() => onManagePayees(payeeId)}
+            isCreatable
+            menuPortalTarget={undefined}
+          />
         );
       }}
     </CustomCell>
@@ -493,7 +497,7 @@ function CellWithScheduleIcon({ scheduleId, children }) {
   );
 }
 
-export const Transaction = React.memo(function Transaction(props) {
+export const Transaction = memo(function Transaction(props) {
   let {
     transaction: originalTransaction,
     editing,
@@ -527,19 +531,11 @@ export const Transaction = React.memo(function Transaction(props) {
     onToggleSplit,
   } = props;
 
-  const isNewAutocompleteEnabled = useFeatureFlag('newAutocomplete');
-  const AccountAutocomplete = isNewAutocompleteEnabled
-    ? NewAccountAutocomplete
-    : LegacyAccountAutocomplete;
-  const CategoryAutocomplete = isNewAutocompleteEnabled
-    ? NewCategoryAutocomplete
-    : LegacyCategoryAutocomplete;
-
   let dispatchSelected = useSelectedDispatch();
 
   let [prevShowZero, setPrevShowZero] = useState(showZeroInDeposit);
   let [prevTransaction, setPrevTransaction] = useState(originalTransaction);
-  let [transaction, setTransaction] = useState(
+  let [transaction, setTransaction] = useState(() =>
     serializeTransaction(originalTransaction, showZeroInDeposit),
   );
   let isPreview = isPreviewId(transaction.id);
@@ -612,15 +608,23 @@ export const Transaction = React.memo(function Transaction(props) {
     cleared,
     is_parent: isParent,
     _unmatched = false,
+    _inverse = false,
   } = transaction;
 
   // Join in some data
   let payee = payees && payeeId && getPayeesById(payees)[payeeId];
   let account = accounts && accountId && getAccountsById(accounts)[accountId];
-  let transferAcct =
-    payee &&
-    payee.transfer_acct &&
-    getAccountsById(accounts)[payee.transfer_acct];
+  let transferAcct;
+
+  if (_inverse) {
+    transferAcct =
+      accounts && accountId && getAccountsById(accounts)[accountId];
+  } else {
+    transferAcct =
+      payee &&
+      payee.transfer_acct &&
+      getAccountsById(accounts)[payee.transfer_acct];
+  }
 
   let isChild = transaction.is_child;
   let borderColor = selected ? colors.b8 : colors.border;
@@ -687,8 +691,8 @@ export const Transaction = React.memo(function Transaction(props) {
         <SelectCell
           exposed={hovered || selected || editing}
           focused={focusedField === 'select'}
-          onSelect={() => {
-            dispatchSelected({ type: 'select', id: transaction.id });
+          onSelect={e => {
+            dispatchSelected({ type: 'select', id: transaction.id, event: e });
           }}
           onEdit={() => onEdit(id, 'select')}
           selected={selected}
@@ -768,6 +772,7 @@ export const Transaction = React.memo(function Transaction(props) {
             inputStyle,
           }) => (
             <AccountAutocomplete
+              includeClosedAccounts={false}
               value={accountId}
               accounts={accounts}
               shouldSaveFromKey={shouldSaveFromKey}
@@ -786,6 +791,7 @@ export const Transaction = React.memo(function Transaction(props) {
           <PayeeCell
             id={id}
             payeeId={payeeId}
+            accountId={accountId}
             focused={focusedField === 'payee'}
             inherited={inheritedFields && inheritedFields.has('payee')}
             payees={payees}
@@ -998,14 +1004,14 @@ export const Transaction = React.memo(function Transaction(props) {
         name="debit"
         exposed={focusedField === 'debit'}
         focused={focusedField === 'debit'}
-        value={debit == null ? '' : debit}
+        value={debit === '' && credit === '' ? '0.00' : debit}
         valueStyle={valueStyle}
         textAlign="right"
         title={debit}
         onExpose={!isPreview && (name => onEdit(id, name))}
         style={[isParent && { fontStyle: 'italic' }, styles.tnum, amountStyle]}
         inputProps={{
-          value: debit,
+          value: debit === '' && credit === '' ? '0.00' : debit,
           onUpdate: onUpdate.bind(null, 'debit'),
         }}
       />
@@ -1016,7 +1022,7 @@ export const Transaction = React.memo(function Transaction(props) {
         name="credit"
         exposed={focusedField === 'credit'}
         focused={focusedField === 'credit'}
-        value={credit == null ? '' : credit}
+        value={credit}
         valueStyle={valueStyle}
         textAlign="right"
         title={credit}
@@ -1109,7 +1115,7 @@ function makeTemporaryTransactions(currentAccountId, lastDate) {
       date: lastDate || currentDay(),
       account: currentAccountId || null,
       cleared: false,
-      amount: 0,
+      amount: null,
     },
   ];
 }
@@ -1159,7 +1165,7 @@ function NewTransaction({
       }}
       data-testid="new-transaction"
       onKeyDown={e => {
-        if (e.code === 'Escape') {
+        if (e.key === 'Escape') {
           onClose();
         }
       }}
@@ -1241,7 +1247,7 @@ function TransactionTableInner({
   onScroll,
   ...props
 }) {
-  const containerRef = React.createRef();
+  const containerRef = createRef();
   const isAddingPrev = usePrevious(props.isAdding);
 
   useEffect(() => {
@@ -1328,7 +1334,7 @@ function TransactionTableInner({
           }
           dateFormat={dateFormat}
           hideFraction={hideFraction}
-          onHover={props.onHover}
+          onHover={onHover}
           onEdit={tableNavigator.onEdit}
           onSave={props.onSave}
           onDelete={props.onDelete}
@@ -1428,7 +1434,7 @@ function TransactionTableInner({
   );
 }
 
-export let TransactionTable = React.forwardRef((props, ref) => {
+export let TransactionTable = forwardRef((props, ref) => {
   let [newTransactions, setNewTransactions] = useState(null);
   let [hoveredTransaction, setHoveredTransaction] = useState(
     props.hoveredTransaction,
@@ -1590,7 +1596,7 @@ export let TransactionTable = React.forwardRef((props, ref) => {
   }
 
   function onCheckNewEnter(e) {
-    if (e.code === 'Enter') {
+    if (e.key === 'Enter') {
       if (e.metaKey) {
         e.stopPropagation();
         onAddTemporary();
@@ -1620,9 +1626,6 @@ export let TransactionTable = React.forwardRef((props, ref) => {
             // add split
             onAddSplit(lastTransaction.id);
           } else if (
-            (newNavigator.focusedField === 'debit' ||
-              newNavigator.focusedField === 'credit' ||
-              newNavigator.focusedField === 'cleared') &&
             newNavigator.editingId === lastTransaction.id &&
             (!isSplit || !lastTransaction.error)
           ) {
@@ -1634,7 +1637,7 @@ export let TransactionTable = React.forwardRef((props, ref) => {
   }
 
   function onCheckEnter(e) {
-    if (e.code === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       let { editingId: id, focusedField } = tableNavigator;
 
       afterSave(() => {
@@ -1708,15 +1711,17 @@ export let TransactionTable = React.forwardRef((props, ref) => {
         let { data, diff } = splitTransaction(newTrans, id);
         setNewTransactions(data);
 
-        // TODO: what is this for???
-        // if (newTrans[0].amount == null) {
-        //   newNavigator.onEdit(newTrans[0].id, 'debit');
-        // } else {
-        newNavigator.onEdit(
-          diff.added[0].id,
-          latestState.current.newNavigator.focusedField,
-        );
-        // }
+        // Jump next to "debit" field if it is empty
+        // Otherwise jump to the same field as before, but downwards
+        // to the added split transaction
+        if (newTrans[0].amount === null) {
+          newNavigator.onEdit(newTrans[0].id, 'debit');
+        } else {
+          newNavigator.onEdit(
+            diff.added[0].id,
+            latestState.current.newNavigator.focusedField,
+          );
+        }
       } else {
         let trans = latestState.current.transactions.find(t => t.id === id);
         let newId = props.onSplit(id);
@@ -1724,7 +1729,7 @@ export let TransactionTable = React.forwardRef((props, ref) => {
         splitsExpanded.dispatch({ type: 'open-split', id: trans.id });
 
         let { tableNavigator } = latestState.current;
-        if (trans.amount == null) {
+        if (trans.amount === null) {
           tableNavigator.onEdit(trans.id, 'debit');
         } else {
           tableNavigator.onEdit(newId, tableNavigator.focusedField);

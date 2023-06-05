@@ -1,4 +1,10 @@
-import React, { useEffect } from 'react';
+import React, {
+  PureComponent,
+  Component,
+  forwardRef,
+  useEffect,
+  useRef,
+} from 'react';
 
 import { useFocusRing } from '@react-aria/focus';
 import { useListBox, useListBoxSection, useOption } from '@react-aria/listbox';
@@ -9,8 +15,11 @@ import memoizeOne from 'memoize-one';
 
 import * as monthUtils from 'loot-core/src/shared/months';
 import { getScheduledAmount } from 'loot-core/src/shared/schedules';
-import { titleFirst } from 'loot-core/src/shared/util';
-import { integerToCurrency, groupById } from 'loot-core/src/shared/util';
+import {
+  titleFirst,
+  integerToCurrency,
+  groupById,
+} from 'loot-core/src/shared/util';
 
 import ArrowsSynchronize from '../../icons/v2/ArrowsSynchronize';
 import CheckCircle1 from '../../icons/v2/CheckCircle1';
@@ -88,7 +97,7 @@ function Status({ status }) {
   );
 }
 
-export class Transaction extends React.PureComponent {
+export class Transaction extends PureComponent {
   render() {
     const {
       transaction,
@@ -233,7 +242,7 @@ export class Transaction extends React.PureComponent {
   }
 }
 
-export class TransactionList extends React.Component {
+export class TransactionList extends Component {
   makeData = memoizeOne(transactions => {
     // Group by date. We can assume transactions is ordered
     const sections = [];
@@ -339,7 +348,7 @@ export class TransactionList extends React.Component {
 
 function ListBox(props) {
   let state = useListState(props);
-  let listBoxRef = React.useRef();
+  let listBoxRef = useRef();
   let { listBoxProps, labelProps } = useListBox(props, state, listBoxRef);
 
   useEffect(() => {
@@ -394,54 +403,52 @@ function ListBoxSection({ section, state }) {
   // The heading is rendered inside an <li> element, which contains
   // a <ul> with the child items.
   return (
-    <>
-      <li {...itemProps} style={{ width: '100%' }}>
-        {section.rendered && (
-          <div
-            {...headingProps}
-            style={{
-              ...styles.smallText,
-              backgroundColor: colors.n10,
-              borderBottom: `1px solid ${colors.n9}`,
-              borderTop: `1px solid ${colors.n9}`,
-              color: colors.n4,
-              display: 'flex',
-              justifyContent: 'center',
-              paddingBottom: 4,
-              paddingTop: 4,
-              position: 'sticky',
-              top: '0',
-              width: '100%',
-              zIndex: zIndices.SECTION_HEADING,
-            }}
-          >
-            {section.rendered}
-          </div>
-        )}
-        <ul
-          {...groupProps}
+    <li {...itemProps} style={{ width: '100%' }}>
+      {section.rendered && (
+        <div
+          {...headingProps}
           style={{
-            padding: 0,
-            listStyle: 'none',
+            ...styles.smallText,
+            backgroundColor: colors.n10,
+            borderBottom: `1px solid ${colors.n9}`,
+            borderTop: `1px solid ${colors.n9}`,
+            color: colors.n4,
+            display: 'flex',
+            justifyContent: 'center',
+            paddingBottom: 4,
+            paddingTop: 4,
+            position: 'sticky',
+            top: '0',
+            width: '100%',
+            zIndex: zIndices.SECTION_HEADING,
           }}
         >
-          {[...section.childNodes].map((node, index, nodes) => (
-            <Option
-              key={node.key}
-              item={node}
-              state={state}
-              isLast={index === nodes.length - 1}
-            />
-          ))}
-        </ul>
-      </li>
-    </>
+          {section.rendered}
+        </div>
+      )}
+      <ul
+        {...groupProps}
+        style={{
+          padding: 0,
+          listStyle: 'none',
+        }}
+      >
+        {[...section.childNodes].map((node, index, nodes) => (
+          <Option
+            key={node.key}
+            item={node}
+            state={state}
+            isLast={index === nodes.length - 1}
+          />
+        ))}
+      </ul>
+    </li>
   );
 }
 
 function Option({ isLast, item, state }) {
   // Get props for the option element
-  let ref = React.useRef();
+  let ref = useRef();
   let { optionProps, isSelected } = useOption({ key: item.key }, state, ref);
 
   // Determine whether we should show a keyboard
@@ -466,25 +473,23 @@ function Option({ isLast, item, state }) {
 
 export const ROW_HEIGHT = 50;
 
-export const ListItem = React.forwardRef(
-  ({ children, style, ...props }, ref) => {
-    return (
-      <View
-        style={[
-          {
-            height: ROW_HEIGHT,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingLeft: 10,
-            paddingRight: 10,
-          },
-          style,
-        ]}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </View>
-    );
-  },
-);
+export const ListItem = forwardRef(({ children, style, ...props }, ref) => {
+  return (
+    <View
+      style={[
+        {
+          height: ROW_HEIGHT,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingLeft: 10,
+          paddingRight: 10,
+        },
+        style,
+      ]}
+      ref={ref}
+      {...props}
+    >
+      {children}
+    </View>
+  );
+});

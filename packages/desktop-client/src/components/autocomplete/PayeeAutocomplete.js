@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { Fragment, useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { createPayee } from 'loot-core/src/client/actions/queries';
@@ -27,8 +27,8 @@ function getPayeeSuggestions(payees, focusTransferPayees, accounts) {
 }
 
 function makeNew(value, rawPayee) {
-  if (value === 'new' && !rawPayee.current.startsWith('new:')) {
-    return 'new:' + rawPayee.current;
+  if (value === 'new' && !rawPayee.startsWith('new:')) {
+    return 'new:' + rawPayee;
   }
   return value;
 }
@@ -121,7 +121,7 @@ export function PayeeList({
           lastType = type;
 
           return (
-            <React.Fragment key={item.id}>
+            <Fragment key={item.id}>
               {title && (
                 <div
                   key={'title-' + idx}
@@ -163,7 +163,7 @@ export function PayeeList({
                   More payees are available, search to find them
                 </div>
               )}
-            </React.Fragment>
+            </Fragment>
           );
         })}
       </View>
@@ -184,30 +184,45 @@ export default function PayeeAutocomplete({
   onSelect,
   onManagePayees,
   groupHeaderStyle,
+  accounts,
+  payees,
   ...props
 }) {
-  let payees = useCachedPayees();
-  let accounts = useCachedAccounts();
+  let cachedPayees = useCachedPayees();
+  if (!payees) {
+    payees = cachedPayees;
+  }
+
+  let cachedAccounts = useCachedAccounts();
+  if (!accounts) {
+    accounts = cachedAccounts;
+  }
 
   let [focusTransferPayees, setFocusTransferPayees] = useState(
     defaultFocusTransferPayees,
   );
-  let payeeSuggestions = useMemo(
-    () => [
-      { id: 'new', name: '' },
-      ...getPayeeSuggestions(payees, focusTransferPayees, accounts),
-    ],
-    [payees, focusTransferPayees, accounts],
-  );
+  let [rawPayee, setRawPayee] = useState('');
+  let hasPayeeInput = !!rawPayee;
+  let payeeSuggestions = useMemo(() => {
+    const suggestions = getPayeeSuggestions(
+      payees,
+      focusTransferPayees,
+      accounts,
+    );
 
-  let rawPayee = useRef('');
+    if (!hasPayeeInput) {
+      return suggestions;
+    }
+    return [{ id: 'new', name: '' }, ...suggestions];
+  }, [payees, focusTransferPayees, accounts, hasPayeeInput]);
+
   let dispatch = useDispatch();
 
-  async function handleSelect(value) {
+  async function handleSelect(value, rawInputValue) {
     if (tableBehavior) {
-      onSelect && onSelect(makeNew(value, rawPayee));
+      onSelect && onSelect(makeNew(value, rawInputValue));
     } else {
-      let create = () => dispatch(createPayee(rawPayee.current));
+      let create = () => dispatch(createPayee(rawInputValue));
 
       if (Array.isArray(value)) {
         value = await Promise.all(value.map(v => (v === 'new' ? create() : v)));
@@ -234,18 +249,23 @@ export default function PayeeAutocomplete({
         if (!item) {
           return '';
         } else if (item.id === 'new') {
-          return rawPayee.current;
+          return rawPayee;
         }
         return item.name;
       }}
       focused={payeeFieldFocused}
       inputProps={{
         ...inputProps,
-        onBlur: () => setPayeeFieldFocused(false),
+        onBlur: () => {
+          setRawPayee('');
+          setPayeeFieldFocused(false);
+        },
         onFocus: () => setPayeeFieldFocused(true),
-        onChange: text => (rawPayee.current = text),
+        onChange: setRawPayee,
       }}
-      onUpdate={value => onUpdate && onUpdate(makeNew(value, rawPayee))}
+      onUpdate={(value, inputValue) =>
+        onUpdate && onUpdate(makeNew(value, inputValue))
+      }
       onSelect={handleSelect}
       getHighlightedIndex={suggestions => {
         if (suggestions.length > 1 && suggestions[0].id === 'new') {
@@ -254,7 +274,7 @@ export default function PayeeAutocomplete({
         return 0;
       }}
       filterSuggestions={(suggestions, value) => {
-        let filtered = suggestions.filter((suggestion, idx) => {
+        let filtered = suggestions.filter(suggestion => {
           if (suggestion.id === 'new') {
             return !value || value === '' || focusTransferPayees ? false : true;
           }
@@ -303,26 +323,6 @@ export default function PayeeAutocomplete({
           }
         }
         return filtered;
-      }}
-      initialFilterSuggestions={suggestions => {
-        let filtered = false;
-        let res = suggestions.filter((suggestion, idx) => {
-          if (suggestion.id === 'new') {
-            // Never show the "create new" initially
-            return false;
-          }
-
-          if (idx >= 100 && !suggestion.transfer_acct) {
-            filtered = true;
-            return false;
-          }
-          return true;
-        });
-
-        if (filtered) {
-          res.filtered = true;
-        }
-        return res;
       }}
       renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <PayeeList
