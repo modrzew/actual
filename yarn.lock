@@ -27,7 +27,7 @@ __metadata:
   resolution: "@actual-app/import-ynab4@workspace:packages/import-ynab4"
   dependencies:
     "@actual-app/api": "*"
-    adm-zip: ^0.5.9
+    adm-zip: ^0.6.1
     date-fns: 2.0.0-alpha.27
     slash: 3.0.0
     uuid: 3.3.2
@@ -4879,10 +4879,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"adm-zip@npm:^0.5.9":
-  version: 0.5.9
-  resolution: "adm-zip@npm:0.5.9"
-  checksum: 4909bc04119fdd5e8f8ba43826e50623e5c427cf0a939c809d4f9456a6a03c6aa0544e82088739de9ba16b7649f71b99ccbbddc7b2c38bd6143f9c4726cc7ed9
+"adm-zip@npm:^0.6.1":
+  version: 0.6.1
+  resolution: "adm-zip@npm:0.6.1"
+  checksum: 4e3f4c7744e49329ac871c1b2fc4b2537db197b0b8db3ef2a8813a5aab3a12050ee471281e0d16ceb0e768465ef77ffc7f1f9283d1fef30795c1dbc487a16056
   languageName: node
   linkType: hard
 
@@ -13755,7 +13755,7 @@ __metadata:
     "@types/jest": ^27.5.0
     "@types/webpack": ^5.28.0
     absurd-sql: 0.0.53
-    adm-zip: ^0.5.9
+    adm-zip: ^0.6.1
     babel-loader: ^8.0.6
     better-sqlite3: ^8.1.0
     buffer: ^5.5.0
