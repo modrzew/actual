@@ -26,7 +26,7 @@
     "absurd-sql": "0.0.53",
     "better-sqlite3": "^8.1.0",
     "core-js": "^3.8.3",
-    "csv-parse": "^4.10.1",
+    "csv-parse": "^7.0.2",
     "csv-stringify": "^5.3.6",
     "deep-equal": "^2.0.5",
     "google-protobuf": "^3.12.0-rc.1",
