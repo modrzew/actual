@@ -18,6 +18,6 @@
   "dependencies": {
     "@actual-app/api": "*",
     "date-fns": "2.0.0-alpha.27",
-    "uuid": "3.3.2"
+    "uuid": "14.0.2"
   }
 }

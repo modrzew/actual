@@ -18,7 +18,7 @@ __metadata:
   dependencies:
     better-sqlite3: ^8.1.0
     node-fetch: ^2.6.9
-    uuid: 3.3.2
+    uuid: 14.0.2
   languageName: unknown
   linkType: soft
 
@@ -30,7 +30,7 @@ __metadata:
     adm-zip: ^0.5.9
     date-fns: 2.0.0-alpha.27
     slash: 3.0.0
-    uuid: 3.3.2
+    uuid: 14.0.2
   bin:
     import-ynab4: ./index.js
   languageName: unknown
@@ -42,7 +42,7 @@ __metadata:
   dependencies:
     "@actual-app/api": "*"
     date-fns: 2.0.0-alpha.27
-    uuid: 3.3.2
+    uuid: 14.0.2
   bin:
     import-ynab5: ./index.js
   languageName: unknown
@@ -13791,7 +13791,7 @@ __metadata:
     ts-jest: ^27.0.0
     ts-node: ^10.7.0
     typescript: ^4.6.4
-    uuid: 3.3.2
+    uuid: 14.0.2
     webpack: ^4.41.2
     webpack-cli: ^3.3.9
     ws: ^4.1.0
@@ -20484,12 +20484,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:3.3.2":
-  version: 3.3.2
-  resolution: "uuid@npm:3.3.2"
+"uuid@npm:14.0.2":
+  version: 14.0.2
+  resolution: "uuid@npm:14.0.2"
   bin:
-    uuid: ./bin/uuid
-  checksum: 8793629d2799f500aeea9fcd0aec6c4e9fbcc4d62ed42159ad96be345c3fffac1bbf61a23e18e2782600884fee05e6d4012ce4b70d0037c8e987533ae6a77870
+    uuid: dist-node/bin/uuid
+  checksum: e6f906b70714a39b687eadd443493eb4fd8b7998fa289a3754af215e84418bbfeadfbc3d72da833556a9c2d6fd902d9d769e9bb6c874cf4d583f7ccd03b2456e
   languageName: node
   linkType: hard
 
