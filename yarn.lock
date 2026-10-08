@@ -5417,13 +5417,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"async-limiter@npm:~1.0.0":
-  version: 1.0.1
-  resolution: "async-limiter@npm:1.0.1"
-  checksum: 2b849695b465d93ad44c116220dee29a5aeb63adac16c1088983c339b0de57d76e82533e8e364a93a9f997f28bbfc6a92948cefc120652bd07f3b59f8d75cf2b
-  languageName: node
-  linkType: hard
-
 "async@npm:0.9.x":
   version: 0.9.2
   resolution: "async@npm:0.9.2"
@@ -13794,7 +13787,7 @@ __metadata:
     uuid: 3.3.2
     webpack: ^4.41.2
     webpack-cli: ^3.3.9
-    ws: ^4.1.0
+    ws: ^8.22.0
     yargs: ^9.0.1
   languageName: unknown
   linkType: soft
@@ -21807,16 +21800,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "ws@npm:4.1.0"
-  dependencies:
-    async-limiter: ~1.0.0
-    safe-buffer: ~5.1.0
-  checksum: 8b6e3749a72d5a80cb42986df620d5cc0f2e4ef942673e5e6b4726141b72ed578b953b7e2a06beaf4fd846976961098f973a7d6f3a13ce22d20876716830bf50
-  languageName: node
-  linkType: hard
-
 "ws@npm:^7.4.6":
   version: 7.5.9
   resolution: "ws@npm:7.5.9"
@@ -21829,6 +21812,21 @@ __metadata:
     utf-8-validate:
       optional: true
   checksum: c3c100a181b731f40b7f2fddf004aa023f79d64f489706a28bc23ff88e87f6a64b3c6651fbec3a84a53960b75159574d7a7385709847a62ddb7ad6af76f49138
+  languageName: node
+  linkType: hard
+
+"ws@npm:^8.22.0":
+  version: 8.22.0
+  resolution: "ws@npm:8.22.0"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ">=5.0.2"
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: ba8819b01815b2f76e4d54024010e661e38174c2e4a5b196c39d1c1b745046d23c6b4d84470a46cc1921079e397abd61b18a4b934ba3c3f4f77659b0c7ca22d2
   languageName: node
   linkType: hard
 
